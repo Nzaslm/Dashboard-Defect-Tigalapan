@@ -623,6 +623,7 @@ footer{text-align:center;padding:2rem;font-size:10px;color:var(--txt3);font-fami
 // 3. Pilih sheet → CSV → Publish
 // 4. Copy URL → paste di bawah (ATAU gunakan halaman Setup di dashboard)
 
+// URL Google Sheets Anda sudah terpasang di sini
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTp_mVYnVuQKwHYkMnFs4kAjVOG9o_AYbjQP5qpg6pUdSF_cuKEeFRgV0hWGKQ_6aWhuzSDdRfICtAA/pub?gid=1461342055&single=true&output=csv';
 
 // ════════════════════════════════════════════════════════════════
@@ -686,102 +687,218 @@ function goP(id, btn) {
 // ════════════════════════════════════════════════════════════════
 //  PARSE CSV DARI GOOGLE SHEETS
 // ════════════════════════════════════════════════════════════════
+// ── Parser satu baris CSV (handle quotes + koma di dalam field)
+function parseCSVLine(line) {
+  const res = []; let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { if (inQ && line[i+1]==='"'){cur+='"';i++;} else inQ=!inQ; }
+    else if (ch === ',' && !inQ) { res.push(cur.trim()); cur=''; }
+    else cur += ch;
+  }
+  res.push(cur.trim());
+  return res;
+}
+
+// ── Parse seluruh CSV — deteksi header otomatis, fleksibel urutan kolom
 function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  const rows  = lines.slice(1); // skip header row 1
-  const data  = [];
-  for (const line of rows) {
-    // Handle quoted fields
-    const cols = line.match(/(".*?"|[^,]+)(?=,|$)/g) || line.split(',');
-    const clean = cols.map(c => c.replace(/^"|"$/g,'').trim());
-    if (!clean[3] || clean[3] === '') continue; // skip empty kode
+  const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
+  if (lines.length < 2) return [];
 
-    const p  = parseFloat(clean[4]) || 0;
-    const r  = parseFloat(clean[5]) || 0;
-    const ba = parseFloat(clean[6]) || 0;
-    const bo = parseFloat(clean[7]) || 0;
-    const bs = parseFloat(clean[8]) || 0;
-    const no = parseFloat(clean[9]) || 0;
-    const ol = parseFloat(clean[10])|| 0;
-    const db = parseFloat(clean[11])|| 0;
-    const ko = parseFloat(clean[12])|| 0;
-    const bw = parseFloat(clean[13])|| 0;
-    const ml = parseFloat(clean[14])|| 0;
-    const tg = parseFloat(clean[17])|| 0;
+  // Cari baris header (baris yang ada kata 'vendor' atau 'produksi')
+  let hi = 0;
+  for (let i = 0; i < Math.min(5, lines.length); i++) {
+    const l = lines[i].toLowerCase();
+    if (l.includes('vendor') || l.includes('produksi') || l.includes('reject')) { hi = i; break; }
+  }
 
-    const blnRaw = (clean[1]||'').toLowerCase().trim();
+  const hdr = parseCSVLine(lines[hi]).map(h => h.toLowerCase().replace(/\n/g,' ').trim());
+
+  // Deteksi index tiap kolom dari header
+  const fi = (tests) => { // find index
+    for (const t of tests) {
+      const idx = hdr.findIndex(h => typeof t === 'string' ? h.includes(t) : t.test(h));
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  };
+
+  const ci = {
+    po:  fi(['po']),
+    bl:  fi(['bulan','month']),
+    v:   fi(['vendor']),
+    k:   fi(['kode','code produksi','kode produksi']),
+    p:   fi([/^total produksi$/,/^produksi$/,'total produksi','produksi']),
+    r:   fi([/^total.{0,3}reject$/,/^reject$/]),
+    ba:  fi(['bahan']),
+    bo:  fi(['bolong']),
+    bs:  fi([/reject bs/,/^bs$/]),
+    no:  fi(['noda']),
+    ol:  fi(['oli']),
+    db:  fi(['double','dbl benang','dblbenang']),
+    ko:  fi(['kotor']),
+    bw:  fi(['bowing']),
+    ml:  fi(['melintir']),
+    mat: fi([/reject material/,/^material$/,/^mat$/]),
+    pro: fi([/reject proses/,/^proses$/]),
+    tg:  fi(['target']),
+  };
+
+  // Fallback ke posisi default jika header tidak ditemukan
+  const def = {po:0,bl:1,v:2,k:3,p:4,r:5,ba:6,bo:7,bs:8,no:9,ol:10,db:11,ko:12,bw:13,ml:14,mat:15,pro:16,tg:17};
+  Object.keys(def).forEach(k => { if (ci[k] < 0) ci[k] = def[k]; });
+
+  const data = [];
+  for (const line of lines.slice(hi + 1)) {
+    if (!line.trim()) continue;
+    const c = parseCSVLine(line);
+    if (c.length < 3) continue;
+    const g = i => parseFloat((c[i]||'').replace(/,/g,'').replace(/\s/g,'')) || 0;
+    const s = i => (c[i]||'').trim();
+
+    const poRaw = s(ci.po), vRaw = s(ci.v), kRaw = s(ci.k);
+    if (!poRaw && !vRaw) continue;
+
+    // FILTER: skip baris subtotal (Vendor = "All Vendor..." atau Kode mengandung "TOTAL")
+    if (vRaw.toLowerCase().includes('all vendor')) continue;
+    if (kRaw.toUpperCase().includes('TOTAL') && kRaw.toUpperCase().includes('PO')) continue;
+
+    const p=g(ci.p), r=g(ci.r), ba=g(ci.ba), bo=g(ci.bo), bs=g(ci.bs),
+          no=g(ci.no), ol=g(ci.ol), db=g(ci.db), ko=g(ci.ko), bw=g(ci.bw), ml=g(ci.ml), tg=g(ci.tg);
+
+    // Skip baris dengan produksi 0 dan reject 0 (PO terdaftar tapi belum produksi)
+    // Tetap masukkan jika ada target (PO baru belum mulai)
+    // if (p === 0 && r === 0) continue; // dinonaktifkan agar PO baru tetap tampil
+
+    // Noda masuk Material sesuai klasifikasi
+    const matCalc = ba+bo+bs+no;
+    const proCalc = ol+db+ko+bw+ml;
+    const mat = (ci.mat>=0 && g(ci.mat)>0) ? g(ci.mat) : matCalc;
+    const pro = (ci.pro>=0 && g(ci.pro)>0) ? g(ci.pro) : proCalc;
+
+    // Deteksi bulan: dari teks ATAU dari tanggal (format 2026-01-07, 2026-02-xx, dst)
+    const blnRaw = s(ci.bl).toLowerCase();
     let bl = 'jan';
-    if (blnRaw.includes('feb')) bl = 'feb';
-    else if (blnRaw.includes('mar')) bl = 'mar';
-    else if (blnRaw.includes('apr')) bl = 'apr';
-    else if (blnRaw.includes('mei') || blnRaw.includes('may')) bl = 'mei';
+    // Coba dari teks nama bulan
+    if (blnRaw.includes('feb')) bl='feb';
+    else if (blnRaw.includes('mar')||blnRaw.includes('maret')) bl='mar';
+    else if (blnRaw.includes('apr')) bl='apr';
+    else if (blnRaw.includes('mei')||blnRaw.includes('may')) bl='mei';
+    else if (blnRaw.includes('jun')) bl='jun';
+    else if (blnRaw.includes('jul')) bl='jul';
+    else if (blnRaw.includes('agu')||blnRaw.includes('aug')) bl='agu';
+    else if (blnRaw.includes('sep')) bl='sep';
+    else if (blnRaw.includes('okt')||blnRaw.includes('oct')) bl='okt';
+    else if (blnRaw.includes('nov')) bl='nov';
+    else if (blnRaw.includes('des')||blnRaw.includes('dec')) bl='des';
+    else if (blnRaw.includes('jan')||blnRaw.includes('01-')) bl='jan';
+    // Coba dari format tanggal YYYY-MM-DD atau DD/MM/YYYY
+    if (bl==='jan') {
+      const mNum = blnRaw.match(/\d{4}-(\d{2})-\d{2}/) || blnRaw.match(/\d{2}\/(\d{2})\/\d{4}/);
+      if (mNum) {
+        const m = parseInt(mNum[1]);
+        const BL_MAP = {1:'jan',2:'feb',3:'mar',4:'apr',5:'mei',6:'jun',7:'jul',8:'agu',9:'sep',10:'okt',11:'nov',12:'des'};
+        bl = BL_MAP[m] || 'jan';
+      }
+    }
+    // Fallback: deteksi bulan dari kode produksi (misal GI0107JANUARI2026)
+    if (bl==='jan') {
+      const kUp = kRaw.toUpperCase();
+      if (kUp.includes('FEBRUARI')) bl='feb';
+      else if (kUp.includes('MARET')) bl='mar';
+      else if (kUp.includes('APRIL')) bl='apr';
+      else if (kUp.includes('MEI')) bl='mei';
+    }
 
-    data.push({
-      po: (clean[0]||'').trim(),
-      bl,
-      v:  (clean[2]||'').trim(),
-      k:  clean[3],
-      p, r,
-      mat: ba+bo+bs+no,  // Material = Bahan+Bolong+BS+Noda
-      pro: ol+db+ko+bw+ml,
-      ba, bo, bs, no, ol, db, ko, bw, ml,
-      target: tg,
-    });
+    data.push({po:poRaw, bl, v:vRaw, k:kRaw, p, r, mat, pro, ba, bo, bs, no, ol, db, ko, bw, ml, target:tg});
   }
   return data;
 }
 
 // ════════════════════════════════════════════════════════════════
-//  LOAD DATA DARI GOOGLE SHEETS
+//  LOAD DATA — dengan CORS proxy otomatis sebagai fallback
 // ════════════════════════════════════════════════════════════════
+async function fetchWithCORSFallback(url) {
+  // Coba langsung dulu (works di GitHub Pages)
+  try {
+    const res = await fetch(url, {cache:'no-store', mode:'cors'});
+    if (res.ok) return await res.text();
+  } catch(e) {}
+
+  // Fallback 1: allorigins proxy
+  try {
+    const proxy1 = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxy1, {cache:'no-store'});
+    if (res.ok) {
+      const json = await res.json();
+      if (json.contents) return json.contents;
+    }
+  } catch(e) {}
+
+  // Fallback 2: corsproxy.io
+  try {
+    const proxy2 = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    const res = await fetch(proxy2, {cache:'no-store'});
+    if (res.ok) return await res.text();
+  } catch(e) {}
+
+  throw new Error('Tidak bisa mengambil data. Coba buka dashboard di GitHub Pages, bukan file lokal.');
+}
+
 async function loadData() {
   if (!sheetUrl) {
-    // Tampilkan panduan setup
     document.getElementById('loading').classList.add('hide');
-    document.getElementById('sync-msg').textContent = '⚙️ Belum ada URL Google Sheets — buka tab Setup';
+    document.getElementById('sync-msg').textContent = '⚙️ Belum ada URL — buka tab Setup';
     document.getElementById('sync-bar').className = 'sync-bar err';
-    showSetupGuide();
-    return;
+    showSetupGuide(); return;
   }
 
   document.getElementById('loading').classList.remove('hide');
-  document.getElementById('loading-sub').textContent = 'Mengambil data: ' + sheetUrl.slice(0,50)+'...';
-  document.getElementById('sync-msg').textContent = '🔄 Memuat data dari Google Sheets...';
+  document.getElementById('loading-sub').textContent = 'Menghubungkan ke Google Sheets...';
+  document.getElementById('sync-msg').textContent = '🔄 Memuat data...';
 
   try {
-    // Gunakan proxy CORS untuk menghindari CORS error
-    // Jika deploy di GitHub Pages, Google Sheets publish CSV sudah CORS-friendly
-    const url = sheetUrl.includes('export?format=csv')
-      ? sheetUrl
-      : sheetUrl + (sheetUrl.includes('?') ? '&' : '?') + 'output=csv';
+    // Pastikan URL output CSV
+    let url = sheetUrl.trim();
+    if (!url.includes('output=csv') && !url.includes('format=csv')) {
+      url += (url.includes('?') ? '&' : '?') + 'output=csv';
+    }
 
-    const res = await fetch(url, {cache: 'no-store'});
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = await res.text();
+    document.getElementById('loading-sub').textContent = 'Mengambil CSV...';
+    const text = await fetchWithCORSFallback(url);
+
+    if (!text || text.trim().length < 10) throw new Error('Data kosong dari Google Sheets');
+    if (text.trim().startsWith('<')) throw new Error('URL mengembalikan HTML bukan CSV. Pastikan sudah di-publish sebagai CSV.');
 
     ORDERS = parseCSV(text);
-    if (ORDERS.length === 0) throw new Error('Data kosong atau format tidak sesuai');
+    if (ORDERS.length === 0) {
+      // Debug: tampilkan 3 baris pertama
+      const preview = text.split('\n').slice(0,4).join(' | ');
+      throw new Error(`Data parsed 0 baris. Preview CSV: ${preview.slice(0,200)}`);
+    }
 
-    // Sukses!
     document.getElementById('loading').classList.add('hide');
     document.getElementById('error-banner').style.display = 'none';
-
     const now = new Date().toLocaleString('id-ID');
     document.getElementById('sync-bar').className = 'sync-bar ok';
-    document.getElementById('sync-msg').textContent = `✅ ${ORDERS.length} order berhasil dimuat dari Google Sheets`;
+    document.getElementById('sync-msg').textContent = `✅ ${ORDERS.length} order berhasil dimuat`;
     document.getElementById('sync-time').textContent = 'Update: ' + now;
-    document.getElementById('hdr-src').textContent = 'Connected · Google Sheets · ' + ORDERS.length + ' order';
-
+    document.getElementById('hdr-src').textContent = 'Live · Google Sheets · ' + ORDERS.length + ' order';
     renderAll();
-  } catch (err) {
+
+  } catch(err) {
     document.getElementById('loading').classList.add('hide');
     const banner = document.getElementById('error-banner');
     banner.style.display = 'block';
     document.getElementById('error-msg').innerHTML =
-      `Error: <code>${err.message}</code><br>Pastikan URL benar dan Google Sheets sudah di-publish sebagai CSV publik. Cek tab ⚙️ Setup.`;
+      `<strong>Error:</strong> <code>${err.message}</code><br><br>
+      <strong>Solusi yang bisa dicoba:</strong><br>
+      1. Pastikan Google Sheets sudah di-publish: <strong>File → Share → Publish to web → CSV → Publish</strong><br>
+      2. Kalau buka dari file lokal (double-click), browser blokir CORS — <strong>upload ke GitHub Pages dulu</strong><br>
+      3. Cek tab ⚙️ Setup untuk ganti URL`;
     document.getElementById('sync-bar').className = 'sync-bar err';
-    document.getElementById('sync-msg').textContent = '❌ Gagal memuat data — cek Setup';
-    console.error('Sheet load error:', err);
+    document.getElementById('sync-msg').textContent = '❌ Gagal memuat — lihat pesan error di atas';
+    console.error('Load error:', err);
   }
 }
 
