@@ -647,6 +647,14 @@ function mk(id, cfg) {
 const MAT = o => (o.ba||0)+(o.bo||0)+(o.bs||0)+(o.no||0);
 const PRO = o => (o.ol||0)+(o.ko||0)+(o.db||0)+(o.bw||0)+(o.ml||0);
 const rc = r => r > 1 ? '#dc2626' : r > 0.7 ? '#d97706' : '#16a34a';
+// Format rate: selalu tampilkan setidaknya 2 desimal, tambah presisi jika nilai sangat kecil
+function fmtRate(r) {
+  if (r === 0) return '0,00%';
+  if (r >= 1)   return r.toFixed(2)+'%';
+  if (r >= 0.1) return r.toFixed(3)+'%';
+  if (r >= 0.01)return r.toFixed(4)+'%';
+  return r.toFixed(5)+'%'; // sangat kecil, tampilkan 5 desimal
+}
 const nf = n => Number(n||0).toLocaleString('id');
 function pill(r) {
   if (r > 1)    return `<span class="pill p-red">Kritis</span>`;
@@ -672,7 +680,7 @@ function cOpts(ymx=1.2) {
     plugins:{legend:{display:false}},
     scales:{
       x:{ticks:{font:{size:10,family:'DM Sans'},color:'#9ca3af'},grid:{display:false},border:{display:false}},
-      y:{min:0,max:ymx,ticks:{font:{size:9},color:'#9ca3af',callback:v=>v.toFixed(1)+'%'},grid:{color:'rgba(0,0,0,.04)'},border:{display:false}}
+      y:{min:0,max:ymx,ticks:{font:{size:9},color:'#9ca3af',callback:v=>v<0.1?v.toFixed(3)+'%':v.toFixed(2)+'%'},grid:{color:'rgba(0,0,0,.04)'},border:{display:false}}
     }
   };
 }
@@ -688,132 +696,162 @@ function goP(id, btn) {
 //  PARSE CSV DARI GOOGLE SHEETS
 // ════════════════════════════════════════════════════════════════
 // ── Parser satu baris CSV (handle quotes + koma di dalam field)
-function parseCSVLine(line) {
-  const res = []; let cur = '', inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') { if (inQ && line[i+1]==='"'){cur+='"';i++;} else inQ=!inQ; }
-    else if (ch === ',' && !inQ) { res.push(cur.trim()); cur=''; }
-    else cur += ch;
+// ══ Parser CSV yang handle multiline quoted fields (newline di dalam "...")
+function parseCSVRobust(text) {
+  // Normalize CRLF
+  text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // Tokenize seluruh CSV dengan benar (handle newline di dalam quotes)
+  const rows = [];
+  let cur = '', inQ = false, row = [];
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"') {
+      if (inQ && text[i+1] === '"') { cur += '"'; i++; }  // escaped quote
+      else inQ = !inQ;
+    } else if (ch === ',' && !inQ) {
+      row.push(cur.trim()); cur = '';
+    } else if (ch === '\n' && !inQ) {
+      row.push(cur.trim()); rows.push(row); row = []; cur = '';
+    } else {
+      cur += ch;
+    }
   }
-  res.push(cur.trim());
-  return res;
-}
+  if (cur.trim() || row.length) { row.push(cur.trim()); rows.push(row); }
 
-// ── Parse seluruh CSV — deteksi header otomatis, fleksibel urutan kolom
-function parseCSV(text) {
-  const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
-  if (lines.length < 2) return [];
+  if (rows.length < 2) return [];
 
-  // Cari baris header (baris yang ada kata 'vendor' atau 'produksi')
+  // Cari baris header — baris pertama yang ada 'vendor' atau 'produksi'
   let hi = 0;
-  for (let i = 0; i < Math.min(5, lines.length); i++) {
-    const l = lines[i].toLowerCase();
-    if (l.includes('vendor') || l.includes('produksi') || l.includes('reject')) { hi = i; break; }
+  for (let i = 0; i < Math.min(5, rows.length); i++) {
+    const joined = rows[i].join(' ').toLowerCase();
+    if (joined.includes('vendor') || joined.includes('produksi') || joined.includes('kode produksi')) {
+      hi = i; break;
+    }
   }
 
-  const hdr = parseCSVLine(lines[hi]).map(h => h.toLowerCase().replace(/\n/g,' ').trim());
+  // Normalize header: lowercase, strip whitespace & newline
+  const hdr = rows[hi].map(h => h.toLowerCase().replace(/\s+/g,' ').trim());
 
-  // Deteksi index tiap kolom dari header
-  const fi = (tests) => { // find index
+  // Cari index kolom dari header — robust matching
+  const fi = (...tests) => {
     for (const t of tests) {
-      const idx = hdr.findIndex(h => typeof t === 'string' ? h.includes(t) : t.test(h));
+      const idx = hdr.findIndex(h => t instanceof RegExp ? t.test(h) : h.includes(t));
       if (idx >= 0) return idx;
     }
     return -1;
   };
 
   const ci = {
-    po:  fi(['po']),
-    bl:  fi(['bulan','month']),
-    v:   fi(['vendor']),
-    k:   fi(['kode','code produksi','kode produksi']),
-    p:   fi([/^total produksi$/,/^produksi$/,'total produksi','produksi']),
-    r:   fi([/^total.{0,3}reject$/,/^reject$/]),
-    ba:  fi(['bahan']),
-    bo:  fi(['bolong']),
-    bs:  fi([/reject bs/,/^bs$/]),
-    no:  fi(['noda']),
-    ol:  fi(['oli']),
-    db:  fi(['double','dbl benang','dblbenang']),
-    ko:  fi(['kotor']),
-    bw:  fi(['bowing']),
-    ml:  fi(['melintir']),
-    mat: fi([/reject material/,/^material$/,/^mat$/]),
-    pro: fi([/reject proses/,/^proses$/]),
-    tg:  fi(['target']),
+    po:  fi('po - ', /^po$/),
+    bl:  fi('bulan', 'month'),
+    v:   fi('vendor'),
+    k:   fi('kode produksi', 'kode', 'code'),
+    p:   fi('total produksi', /^produksi$/),
+    r:   fi('total reject', /^reject$/),
+    ba:  fi('reject bahan', /^bahan$/),
+    bo:  fi('reject bolong', /^bolong$/),
+    bs:  fi('reject bs', /^bs$/),
+    no:  fi('reject noda', /^noda$/),
+    ol:  fi('reject oli', /^oli$/),
+    db:  fi('double benang', 'dbl', 'double'),
+    ko:  fi('reject kotor', /^kotor$/),
+    bw:  fi('reject bowing', /^bowing$/),
+    ml:  fi('reject melintir', /^melintir$/),
+    mat: fi('reject material', /^material$/),
+    pro: fi('reject proses', /^proses$/),
+    tg:  fi('target cutting', 'target'),
   };
 
-  // Fallback ke posisi default jika header tidak ditemukan
-  const def = {po:0,bl:1,v:2,k:3,p:4,r:5,ba:6,bo:7,bs:8,no:9,ol:10,db:11,ko:12,bw:13,ml:14,mat:15,pro:16,tg:17};
-  Object.keys(def).forEach(k => { if (ci[k] < 0) ci[k] = def[k]; });
+  // Fallback ke posisi default kolom jika tidak ditemukan dari header
+  // Urutan default: A=PO, B=Jadwal, C=Bulan, D=Roll, E=Kode, F=JadwalProd,
+  //                G=Bahan, H=Bolong, I=BS, J=Noda, K=Oli, L=DblBenang,
+  //                M=Kotor, N=Bowing, O=Melintir, P=TotalReject, Q=TargetCut,
+  //                R=TotalProd, S=Rate, T=Yield, U=Vendor, V=Mat, W=Proses
+  const def = {po:0, bl:2, v:20, k:4, p:17, r:15, ba:6, bo:7, bs:8,
+               no:9, ol:10, db:11, ko:12, bw:13, ml:14, mat:21, pro:22, tg:16};
+  Object.keys(def).forEach(key => { if (ci[key] < 0) ci[key] = def[key]; });
 
   const data = [];
-  for (const line of lines.slice(hi + 1)) {
-    if (!line.trim()) continue;
-    const c = parseCSVLine(line);
-    if (c.length < 3) continue;
-    const g = i => parseFloat((c[i]||'').replace(/,/g,'').replace(/\s/g,'')) || 0;
-    const s = i => (c[i]||'').trim();
+  for (const row of rows.slice(hi + 1)) {
+    if (!row.length || row.every(c => !c)) continue;
+    const g = i => parseFloat((row[i]||'').replace(/,/g,'').replace(/\s/g,'')) || 0;
+    const s = i => (row[i]||'').trim();
 
-    const poRaw = s(ci.po), vRaw = s(ci.v), kRaw = s(ci.k);
-    if (!poRaw && !vRaw) continue;
+    const poRaw = s(ci.po);
+    const vRaw  = s(ci.v);
+    const kRaw  = s(ci.k);
 
-    // FILTER: skip baris subtotal (Vendor = "All Vendor..." atau Kode mengandung "TOTAL")
+    // Skip baris kosong, subtotal, atau header duplikat
+    if (!kRaw && !poRaw) continue;
     if (vRaw.toLowerCase().includes('all vendor')) continue;
-    if (kRaw.toUpperCase().includes('TOTAL') && kRaw.toUpperCase().includes('PO')) continue;
+    if (kRaw.toUpperCase().includes('TOTAL') && /PO/i.test(kRaw)) continue;
+    if (kRaw.toLowerCase() === 'kode produksi') continue; // header duplikat
 
-    const p=g(ci.p), r=g(ci.r), ba=g(ci.ba), bo=g(ci.bo), bs=g(ci.bs),
-          no=g(ci.no), ol=g(ci.ol), db=g(ci.db), ko=g(ci.ko), bw=g(ci.bw), ml=g(ci.ml), tg=g(ci.tg);
+    const p  = g(ci.p);
+    const r  = g(ci.r);
+    const ba = g(ci.ba), bo = g(ci.bo), bs = g(ci.bs), no = g(ci.no);
+    const ol = g(ci.ol), db = g(ci.db), ko = g(ci.ko), bw = g(ci.bw), ml = g(ci.ml);
+    const tg = g(ci.tg);
 
-    // Skip baris dengan produksi 0 dan reject 0 (PO terdaftar tapi belum produksi)
-    // Tetap masukkan jika ada target (PO baru belum mulai)
-    // if (p === 0 && r === 0) continue; // dinonaktifkan agar PO baru tetap tampil
+    // Noda = Material (klasifikasi yang benar)
+    const matCalc = ba + bo + bs + no;
+    const proCalc = ol + db + ko + bw + ml;
+    const mat = (ci.mat >= 0 && g(ci.mat) > 0) ? g(ci.mat) : matCalc;
+    const pro = (ci.pro >= 0 && g(ci.pro) > 0) ? g(ci.pro) : proCalc;
 
-    // Noda masuk Material sesuai klasifikasi
-    const matCalc = ba+bo+bs+no;
-    const proCalc = ol+db+ko+bw+ml;
-    const mat = (ci.mat>=0 && g(ci.mat)>0) ? g(ci.mat) : matCalc;
-    const pro = (ci.pro>=0 && g(ci.pro)>0) ? g(ci.pro) : proCalc;
+    // ── Deteksi bulan — 3 cara fallback ──
+    let bl = '';
 
-    // Deteksi bulan: dari teks ATAU dari tanggal (format 2026-01-07, 2026-02-xx, dst)
-    const blnRaw = s(ci.bl).toLowerCase();
-    let bl = 'jan';
-    // Coba dari teks nama bulan
-    if (blnRaw.includes('feb')) bl='feb';
-    else if (blnRaw.includes('mar')||blnRaw.includes('maret')) bl='mar';
-    else if (blnRaw.includes('apr')) bl='apr';
-    else if (blnRaw.includes('mei')||blnRaw.includes('may')) bl='mei';
-    else if (blnRaw.includes('jun')) bl='jun';
-    else if (blnRaw.includes('jul')) bl='jul';
-    else if (blnRaw.includes('agu')||blnRaw.includes('aug')) bl='agu';
-    else if (blnRaw.includes('sep')) bl='sep';
-    else if (blnRaw.includes('okt')||blnRaw.includes('oct')) bl='okt';
-    else if (blnRaw.includes('nov')) bl='nov';
-    else if (blnRaw.includes('des')||blnRaw.includes('dec')) bl='des';
-    else if (blnRaw.includes('jan')||blnRaw.includes('01-')) bl='jan';
-    // Coba dari format tanggal YYYY-MM-DD atau DD/MM/YYYY
-    if (bl==='jan') {
-      const mNum = blnRaw.match(/\d{4}-(\d{2})-\d{2}/) || blnRaw.match(/\d{2}\/(\d{2})\/\d{4}/);
+    // Cara 1: dari teks nama bulan di kolom Bulan
+    const blnTxt = s(ci.bl).toLowerCase();
+    if      (blnTxt.includes('jan'))                   bl = 'jan';
+    else if (blnTxt.includes('feb'))                   bl = 'feb';
+    else if (blnTxt.includes('mar')||blnTxt.includes('maret')) bl = 'mar';
+    else if (blnTxt.includes('apr'))                   bl = 'apr';
+    else if (blnTxt.includes('mei')||blnTxt.includes('may'))   bl = 'mei';
+    else if (blnTxt.includes('jun'))                   bl = 'jun';
+    else if (blnTxt.includes('jul'))                   bl = 'jul';
+    else if (blnTxt.includes('agu')||blnTxt.includes('aug'))   bl = 'agu';
+    else if (blnTxt.includes('sep'))                   bl = 'sep';
+    else if (blnTxt.includes('okt')||blnTxt.includes('oct'))   bl = 'okt';
+    else if (blnTxt.includes('nov'))                   bl = 'nov';
+    else if (blnTxt.includes('des')||blnTxt.includes('dec'))   bl = 'des';
+
+    // Cara 2: dari format tanggal YYYY-MM-DD di kolom Bulan
+    if (!bl) {
+      const mNum = blnTxt.match(/(\d{4})-(\d{2})-\d{2}/);
       if (mNum) {
-        const m = parseInt(mNum[1]);
-        const BL_MAP = {1:'jan',2:'feb',3:'mar',4:'apr',5:'mei',6:'jun',7:'jul',8:'agu',9:'sep',10:'okt',11:'nov',12:'des'};
-        bl = BL_MAP[m] || 'jan';
+        const M = {1:'jan',2:'feb',3:'mar',4:'apr',5:'mei',6:'jun',
+                   7:'jul',8:'agu',9:'sep',10:'okt',11:'nov',12:'des'};
+        bl = M[parseInt(mNum[2])] || '';
       }
     }
-    // Fallback: deteksi bulan dari kode produksi (misal GI0107JANUARI2026)
-    if (bl==='jan') {
+
+    // Cara 3: dari nama bulan di Kode Produksi (misal GI0107JANUARI2026)
+    if (!bl) {
       const kUp = kRaw.toUpperCase();
-      if (kUp.includes('FEBRUARI')) bl='feb';
-      else if (kUp.includes('MARET')) bl='mar';
-      else if (kUp.includes('APRIL')) bl='apr';
-      else if (kUp.includes('MEI')) bl='mei';
+      if      (kUp.includes('JANUARI'))  bl = 'jan';
+      else if (kUp.includes('FEBRUARI')) bl = 'feb';
+      else if (kUp.includes('MARET'))    bl = 'mar';
+      else if (kUp.includes('APRIL'))    bl = 'apr';
+      else if (kUp.includes('MEI'))      bl = 'mei';
+      else if (kUp.includes('JUNI'))     bl = 'jun';
+      else if (kUp.includes('JULI'))     bl = 'jul';
+      else if (kUp.includes('AGUSTUS'))  bl = 'agu';
+      else if (kUp.includes('SEPTEM'))   bl = 'sep';
+      else if (kUp.includes('OKTO'))     bl = 'okt';
+      else if (kUp.includes('NOVEM'))    bl = 'nov';
+      else if (kUp.includes('DESEM'))    bl = 'des';
     }
+
+    if (!bl) bl = 'jan'; // fallback akhir
 
     data.push({po:poRaw, bl, v:vRaw, k:kRaw, p, r, mat, pro, ba, bo, bs, no, ol, db, ko, bw, ml, target:tg});
   }
   return data;
 }
+const parseCSV = parseCSVRobust; // alias
 
 // ════════════════════════════════════════════════════════════════
 //  LOAD DATA — dengan CORS proxy otomatis sebagai fallback
@@ -1001,7 +1039,7 @@ function renderOverview() {
   // Header KPIs
   document.getElementById('h-prod').textContent  = nf(all.prod);
   document.getElementById('h-rej').textContent   = nf(all.rej);
-  document.getElementById('h-rate').textContent  = all.rate.toFixed(2)+'%';
+  document.getElementById('h-rate').textContent  = fmtRate(all.rate);
   document.getElementById('h-period').textContent = months.map(m=>m.charAt(0).toUpperCase()+m.slice(1)).join('–')+' 2026';
   document.getElementById('ov-src').textContent  = `Google Sheets · ${ORDERS.length} order · ${PO_LIST.length} PO · ${vendors.length} vendor`;
 
@@ -1010,7 +1048,7 @@ function renderOverview() {
   document.getElementById('k-prod-sub').textContent = `${PO_LIST.length} PO aktif`;
   document.getElementById('k-rej').textContent = nf(all.rej);
   document.getElementById('k-rej-sub').textContent = `Mat:${all.mat} · Proses:${all.pro}`;
-  document.getElementById('k-rate').textContent = all.rate.toFixed(2)+'%';
+  document.getElementById('k-rate').textContent = fmtRate(all.rate);
   document.getElementById('k-rate').style.color = rc(all.rate);
   document.getElementById('k-rate-sub').textContent = all.rate < 1 ? '✓ Di bawah target 1%' : '⚠ Melebihi target';
   document.getElementById('k-mat').textContent = nf(all.mat);
@@ -1077,13 +1115,13 @@ function renderOverview() {
 
   // Month pills update
   const allS = getStats();
-  document.getElementById('mb-all-rate').textContent = allS.rate.toFixed(2)+'%';
+  document.getElementById('mb-all-rate').textContent = fmtRate(allS.rate);
   document.getElementById('mb-all-info').textContent = nf(allS.prod)+' unit';
   ['jan','feb','mar','apr','mei'].forEach(m=>{
     const ms = getStats(o=>o.bl===m);
     const el_r = document.getElementById('mb-'+m+'-rate');
     const el_i = document.getElementById('mb-'+m+'-info');
-    if(el_r) el_r.textContent = ms.prod>0 ? ms.rate.toFixed(2)+'%' : '–';
+    if(el_r) el_r.textContent = ms.prod>0 ? fmtRate(ms.rate) : '–';
     if(el_i) el_i.textContent = ms.prod>0 ? nf(ms.prod)+' unit' : 'Tidak ada data';
   });
 }
@@ -1107,7 +1145,7 @@ function setM(m, el) {
   document.getElementById('bm-ps').textContent = m==='all'?'Semua bulan':'Bulan '+m;
   document.getElementById('bm-r').textContent = nf(d.rej);
   document.getElementById('bm-rs').textContent = `Mat:${d.mat} · Proses:${d.pro}`;
-  document.getElementById('bm-rate').textContent = d.rate.toFixed(3)+'%';
+  document.getElementById('bm-rate').textContent = fmtRate(d.rate);
   document.getElementById('bm-rate').style.color = rc(d.rate);
   document.getElementById('bm-mat').textContent = nf(d.mat);
   document.getElementById('bm-mats').textContent = d.rej>0?Math.round(d.mat/d.rej*100)+'% termasuk Noda':'–';
@@ -1218,11 +1256,11 @@ function setW(po, btn) {
   document.getElementById('wm-l').textContent = po.replace('PO - ','PO-');
   document.getElementById('wm-r').textContent = nf(d.rej);
   document.getElementById('wm-rs').textContent = `Mat:${d.mat} · Proses:${d.pro}`;
-  document.getElementById('wm-rate').textContent = d.rate.toFixed(3)+'%';
+  document.getElementById('wm-rate').textContent = fmtRate(d.rate);
   document.getElementById('wm-rate').style.color = rc(d.rate);
   if(prev && prev.rate>0){
     const diff = d.rate - prev.rate;
-    document.getElementById('wm-d').textContent = (diff<0?'▼ ':'▲ ')+Math.abs(diff).toFixed(3)+'%';
+    document.getElementById('wm-d').textContent = (diff<0?'▼ ':'▲ ')+fmtRate(Math.abs(diff));
     document.getElementById('wm-d').style.color = diff<0?'#16a34a':'#dc2626';
     document.getElementById('wm-dl').textContent = (diff<0?'membaik':'memburuk')+' vs '+prev.po.replace('PO - ','PO-');
   } else {
@@ -1306,7 +1344,7 @@ function renderVendor() {
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{position:'top',labels:{font:{size:10},boxWidth:8,padding:8,color:'#9ca3af'}}},
       scales:{x:{ticks:{font:{size:10,family:'DM Sans'},color:'#9ca3af'},grid:{display:false},border:{display:false}},
-              y:{min:0,ticks:{font:{size:9},color:'#9ca3af',callback:v=>v.toFixed(1)+'%'},grid:{color:'rgba(0,0,0,.04)'},border:{display:false}}}}
+              y:{min:0,ticks:{font:{size:9},color:'#9ca3af',callback:v=>v<0.1?v.toFixed(3)+'%':v.toFixed(2)+'%'},grid:{color:'rgba(0,0,0,.04)'},border:{display:false}}}}
   });
   vbars(vendors.map(v=>({v:v.v,r:v.rate})).reverse(),'vn-rank');
 
@@ -1330,7 +1368,7 @@ function renderVendor() {
     <td class="mono r">${v.mat}</td>
     <td class="mono r">${v.pro}</td>
     <td class="mono r" style="color:${rc(v.rate)};font-weight:700">${v.rate.toFixed(3)}%</td>
-    <td>${months.map(m=>v.mRates[m]>0?`<span style="font-size:10px;color:${rc(v.mRates[m])}">${m}:${v.mRates[m].toFixed(2)}%</span>`:'').join(' ')}</td>
+    <td>${months.map(m=>v.mRates[m]>0?`<span style="font-size:10px;color:${rc(v.mRates[m])}">${m}:${fmtRate(v.mRates[m])}</span>`:'').join(' ')}</td>
     <td>${pill(v.rate)}</td>
   </tr>`).join('');
 }
