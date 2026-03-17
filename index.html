@@ -2,689 +2,873 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Defect Produksi 2026</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Defect Monitor · Produksi 2026</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
-
-/* ═══════════════════════════════════
-   PANDUAN SETUP — BACA SEBELUM DEPLOY
-   ═══════════════════════════════════
-   1. Buka Google Sheets Anda
-   2. File → Share → Publish to web
-   3. Pilih sheet data → format CSV → Publish
-   4. Copy URL → paste di variabel SHEET_CSV_URL di bawah
-   5. Upload file ini ke GitHub → aktifkan GitHub Pages
-   ═══════════════════════════════════ */
-
-:root {
-  --bg:    #f4f6fb;
-  --surf:  #ffffff;
-  --surf2: #f0f3fa;
-  --surf3: #e8ecf5;
-  --brd:   #dde2ef;
-  --brd2:  #c8d0e5;
-  --txt:   #111827;
-  --txt2:  #4b5563;
-  --txt3:  #9ca3af;
-  --jan:   #2563eb; --jan-bg:#eff6ff; --jan-b:#bfdbfe;
-  --feb:   #d97706; --feb-bg:#fffbeb; --feb-b:#fde68a;
-  --mar:   #059669; --mar-bg:#ecfdf5; --mar-b:#a7f3d0;
-  --red:   #dc2626; --red-bg:#fef2f2;
-  --grn:   #16a34a; --grn-bg:#dcfce7;
-  --teal:  #0891b2; --teal-bg:#ecfeff;
-  --pur:   #7c3aed;
-  --r: 14px;
-  --sh: 0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);
-  --sh2: 0 4px 24px rgba(0,0,0,.1);
+:root{
+  --bg:#f0f2f7;
+  --surf:#fff;
+  --surf2:#f7f8fc;
+  --surf3:#eef0f7;
+  --brd:#e2e6f0;
+  --brd2:#c9cfe3;
+  --txt:#0d1117;
+  --txt2:#4a5568;
+  --txt3:#94a3b8;
+  --jan:#1a56db; --jan-l:#eff6ff; --jan-b:#bfdbfe;
+  --feb:#b45309; --feb-l:#fffbeb; --feb-b:#fde68a;
+  --mar:#047857; --mar-l:#ecfdf5; --mar-b:#6ee7b7;
+  --apr:#7c3aed; --apr-l:#f5f3ff; --apr-b:#c4b5fd;
+  --red:#dc2626; --red-l:#fef2f2;
+  --grn:#16a34a; --grn-l:#dcfce7;
+  --acc:#1a56db;
+  --r:16px; --r2:12px;
+  --sh:0 1px 2px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.06);
+  --sh2:0 8px 32px rgba(0,0,0,.1);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;font-size:14px;line-height:1.5}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.55;overflow-x:hidden}
 
-/* LOADING SCREEN */
-#loading{position:fixed;inset:0;background:#fff;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s}
-#loading.hide{opacity:0;pointer-events:none}
-.spinner{width:44px;height:44px;border:4px solid #e5e7eb;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-txt{font-size:14px;color:#6b7280;font-weight:500}
-.loading-sub{font-size:11px;color:#9ca3af;font-family:'DM Mono',monospace}
-
-/* ERROR BANNER */
-#error-banner{display:none;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:12px;padding:1rem 1.25rem;margin:1rem 2rem;color:#dc2626}
-#error-banner h4{font-size:13px;font-weight:700;margin-bottom:4px}
-#error-banner p{font-size:12px;color:#b91c1c}
-#error-banner code{background:#fee2e2;padding:2px 6px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px}
-
-/* HEADER */
-.hdr{background:linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 60%,#1e40af 100%);padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;box-shadow:0 2px 20px rgba(0,0,0,.25)}
+/* ─── HEADER ─── */
+.hdr{
+  background:linear-gradient(135deg,#0f1b35 0%,#162444 40%,#1a2d52 100%);
+  padding:0 2rem;height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:500;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  box-shadow:0 4px 24px rgba(0,0,0,.3);
+}
 .hdr-l{display:flex;align-items:center;gap:12px}
-.hdr-ico{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:20px}
-.hdr-title{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.02em}
-.hdr-sub{font-size:10px;color:rgba(255,255,255,.6);font-family:'DM Mono',monospace;margin-top:1px}
-.hdr-r{display:flex;align-items:center;gap:18px}
-.hkpi{text-align:right}
-.hkpi-v{font-size:15px;font-weight:700;color:#fff}
-.hkpi-l{font-size:9px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.06em}
-.hdr-badge{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:10px;font-weight:600;padding:5px 12px;border-radius:99px}
-.hdr-badge span{width:6px;height:6px;background:#4ade80;border-radius:50%;animation:blink 2s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hdr-logo{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,#1a56db,#7c3aed);
+  display:flex;align-items:center;justify-content:center;font-size:17px;
+}
+.hdr-name{font-size:14px;font-weight:700;color:#fff;letter-spacing:-.02em}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,.45);font-family:'JetBrains Mono',monospace;margin-top:1px}
+.hdr-stats{display:flex;gap:20px;align-items:center}
+.hs{text-align:right}
+.hs-v{font-size:14px;font-weight:700;color:#fff;letter-spacing:-.02em}
+.hs-l{font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.06em}
+.hdr-badge{
+  display:flex;align-items:center;gap:5px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+  color:rgba(255,255,255,.8);font-size:10px;font-weight:600;
+  padding:4px 10px;border-radius:99px;letter-spacing:.02em;
+}
+.hdr-dot{width:6px;height:6px;background:#4ade80;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
 
-/* SYNC STATUS BAR */
-.sync-bar{background:var(--jan-bg);border-bottom:1px solid var(--jan-b);padding:6px 2rem;display:flex;align-items:center;justify-content:space-between;font-size:11px}
-.sync-bar.ok{background:#ecfdf5;border-color:#a7f3d0}
-.sync-bar.err{background:#fef2f2;border-color:#fca5a5}
-.sync-left{display:flex;align-items:center;gap:8px;color:#374151}
-.sync-ico{font-size:14px}
-.sync-right{display:flex;align-items:center;gap:10px}
-.sync-btn{padding:4px 12px;background:var(--jan);color:#fff;border:none;border-radius:7px;font-size:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s}
-.sync-btn:hover{background:#1d4ed8}
-.sync-time{font-size:10px;color:var(--txt3);font-family:'DM Mono',monospace}
-
-/* NAV */
-.nav{background:var(--surf);border-bottom:1px solid var(--brd);padding:0 2rem;display:flex;overflow-x:auto;box-shadow:var(--sh);position:sticky;top:64px;z-index:200}
+/* ─── NAV ─── */
+.nav{
+  background:var(--surf);border-bottom:1px solid var(--brd);
+  padding:0 2rem;display:flex;overflow-x:auto;
+  position:sticky;top:60px;z-index:400;
+  box-shadow:0 1px 8px rgba(0,0,0,.05);
+}
 .nav::-webkit-scrollbar{display:none}
-.nt{padding:14px 20px;font-size:12px;font-weight:600;color:var(--txt3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s}
+.nt{
+  padding:13px 18px;font-size:12px;font-weight:600;
+  color:var(--txt3);cursor:pointer;white-space:nowrap;
+  border-bottom:2.5px solid transparent;transition:all .15s;
+  display:flex;align-items:center;gap:6px;
+}
 .nt:hover{color:var(--txt2)}
-.nt.on{color:var(--jan);border-bottom-color:var(--jan)}
+.nt.on{color:var(--acc);border-bottom-color:var(--acc)}
+.nt-ico{font-size:13px}
 
-/* PAGES */
-.page{display:none;padding:2rem;max-width:1320px;margin:0 auto}
-.page.on{display:block;animation:up .22s ease}
-@keyframes up{from{opacity:.5;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+/* ─── PAGE ─── */
+.page{display:none;padding:1.75rem 2rem;max-width:1380px;margin:0 auto}
+.page.on{display:block;animation:fadeUp .2s ease}
+@keyframes fadeUp{from{opacity:.4;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
-/* SECTION HEADING */
+/* ─── SECTION HEADING ─── */
 .sh{margin-bottom:1.5rem}
-.sh h2{font-size:22px;font-weight:700;letter-spacing:-.04em;margin-bottom:3px}
-.sh p{font-size:11px;color:var(--txt3);font-family:'DM Mono',monospace}
+.sh-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px}
+.sh h2{font-size:20px;font-weight:800;letter-spacing:-.04em;color:var(--txt)}
+.sh p{font-size:11px;color:var(--txt3);font-family:'JetBrains Mono',monospace}
 
-/* KPI CARDS */
-.krow{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:1.75rem}
-.kc{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);padding:1.3rem 1.4rem;position:relative;overflow:hidden;box-shadow:var(--sh);transition:transform .15s,box-shadow .15s}
+/* ─── KPI CARDS ─── */
+.krow{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:1.5rem}
+.kc{
+  background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);
+  padding:1.3rem 1.4rem;position:relative;overflow:hidden;
+  box-shadow:var(--sh);transition:transform .15s,box-shadow .15s;
+}
 .kc:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
-.kc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--ac,var(--jan))}
-.kc-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px}
-.kc-lbl{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--txt3);margin-bottom:5px}
-.kc-val{font-size:30px;font-weight:700;letter-spacing:-.05em;line-height:1;margin-bottom:4px}
-.kc-sub{font-size:10px;color:var(--txt3);font-family:'DM Mono',monospace}
-.kc-tag{display:inline-flex;font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;margin-top:6px}
+.kc-bar{position:absolute;top:0;left:0;right:0;height:3px}
+.kc-ico{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:11px}
+.kc-lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--txt3);margin-bottom:5px}
+.kc-val{font-size:28px;font-weight:800;letter-spacing:-.05em;line-height:1.1;margin-bottom:4px}
+.kc-sub{font-size:10px;color:var(--txt3);font-family:'JetBrains Mono',monospace}
+.kc-tag{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;margin-top:7px}
 
-/* GRIDS */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1.75rem}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:1.75rem}
-.g31{display:grid;grid-template-columns:2.2fr 1fr;gap:16px;margin-bottom:1.75rem}
+/* ─── GRID LAYOUTS ─── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.5rem}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:1.5rem}
+.g31{display:grid;grid-template-columns:2.3fr 1fr;gap:14px;margin-bottom:1.5rem}
 .gcol{display:flex;flex-direction:column;gap:14px}
 
-/* CARD */
-.card{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);padding:1.5rem;box-shadow:var(--sh)}
-.card-h{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:3px;letter-spacing:-.02em}
-.card-s{font-size:10px;color:var(--txt3);font-family:'DM Mono',monospace;margin-bottom:1.2rem}
+/* ─── CARD ─── */
+.card{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);padding:1.4rem 1.5rem;box-shadow:var(--sh)}
+.ch{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:2px;letter-spacing:-.02em}
+.cs{font-size:10px;color:var(--txt3);font-family:'JetBrains Mono',monospace;margin-bottom:1.2rem}
 
-/* MONTH PILLS */
-.mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.75rem}
-.mpill{background:var(--surf);border:1.5px solid var(--brd);border-radius:var(--r);padding:1.1rem 1.3rem;cursor:pointer;transition:all .15s;box-shadow:var(--sh)}
-.mpill:hover{border-color:var(--brd2);transform:translateY(-1px)}
-.mp-lbl{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);margin-bottom:5px}
-.mp-rate{font-size:26px;font-weight:700;letter-spacing:-.05em;color:var(--txt)}
-.mp-info{font-size:10px;color:var(--txt3);font-family:'DM Mono',monospace;margin-top:3px}
-.mpill.a0{border-color:var(--brd2);background:var(--surf2)}.mpill.a0 .mp-lbl,.mpill.a0 .mp-rate{color:var(--txt2)}
-.mpill.a1{border-color:var(--jan);background:var(--jan-bg)}.mpill.a1 .mp-lbl,.mpill.a1 .mp-rate{color:var(--jan)}
-.mpill.a2{border-color:var(--feb);background:var(--feb-bg)}.mpill.a2 .mp-lbl,.mpill.a2 .mp-rate{color:var(--feb)}
-.mpill.a3{border-color:var(--mar);background:var(--mar-bg)}.mpill.a3 .mp-lbl,.mpill.a3 .mp-rate{color:var(--mar)}
+/* ─── MONTH TABS ─── */
+.mtabs{display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap}
+.mt{
+  padding:7px 16px;border-radius:99px;border:1.5px solid var(--brd);
+  background:transparent;color:var(--txt3);font-size:12px;font-weight:600;
+  cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;
+}
+.mt:hover{border-color:var(--brd2);color:var(--txt2)}
+.mt.on-jan{background:var(--jan-l);border-color:var(--jan);color:var(--jan)}
+.mt.on-feb{background:var(--feb-l);border-color:var(--feb);color:var(--feb)}
+.mt.on-mar{background:var(--mar-l);border-color:var(--mar);color:var(--mar)}
+.mt.on-apr{background:var(--apr-l);border-color:var(--apr);color:var(--apr)}
+.mt.on-all{background:var(--surf2);border-color:var(--brd2);color:var(--txt2)}
 
-/* WEEK TABS */
-.wtabs{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.75rem}
-.wtab{background:var(--surf);border:1.5px solid var(--brd);border-radius:var(--r);padding:12px 13px;cursor:pointer;transition:all .15s;box-shadow:var(--sh)}
-.wtab:hover{transform:translateY(-1px)}
-.wt-l{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);margin-bottom:4px}
-.wt-r{font-size:20px;font-weight:700;letter-spacing:-.04em;color:var(--txt)}
-.wt-d{font-size:9px;color:var(--txt3);font-family:'DM Mono',monospace;margin-top:2px}
-.wtab.w1{border-color:var(--jan);background:var(--jan-bg)}.wtab.w1 .wt-l,.wtab.w1 .wt-r{color:var(--jan)}
-.wtab.w2{border-color:var(--feb);background:var(--feb-bg)}.wtab.w2 .wt-l,.wtab.w2 .wt-r{color:var(--feb)}
-.wtab.w3{border-color:var(--pur);background:#f5f3ff}.wtab.w3 .wt-l,.wtab.w3 .wt-r{color:var(--pur)}
-.wtab.w4{border-color:var(--red);background:var(--red-bg)}.wtab.w4 .wt-l,.wtab.w4 .wt-r{color:var(--red)}
-.wtab.w5{border-color:var(--mar);background:var(--mar-bg)}.wtab.w5 .wt-l,.wtab.w5 .wt-r{color:var(--mar)}
-
-/* BAR ROWS */
-.br{display:flex;align-items:center;gap:10px;margin-bottom:9px}
-.br-n{font-size:11px;font-weight:600;color:var(--txt2);width:52px;flex-shrink:0}
-.br-t{flex:1;height:8px;background:var(--surf2);border-radius:5px;overflow:hidden}
-.br-f{height:100%;border-radius:5px;transition:width .6s cubic-bezier(.4,0,.2,1)}
-.br-v{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;min-width:46px;text-align:right}
-
-/* PILLS & BADGES */
-.pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:7px;white-space:nowrap;display:inline-block;letter-spacing:.02em}
-.p-red{background:var(--red-bg);color:var(--red)}
-.p-amb{background:var(--feb-bg);color:var(--feb)}
-.p-grn{background:var(--grn-bg);color:var(--grn)}
-.p-top{background:var(--teal-bg);color:var(--teal)}
-.b-jan{background:var(--jan-bg);color:var(--jan);font-size:9px;font-weight:700;padding:2px 8px;border-radius:6px}
-.b-feb{background:var(--feb-bg);color:var(--feb);font-size:9px;font-weight:700;padding:2px 8px;border-radius:6px}
-.b-mar{background:var(--mar-bg);color:var(--mar);font-size:9px;font-weight:700;padding:2px 8px;border-radius:6px}
-
-/* PO CARDS */
-.po4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.75rem}
-.poc{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);padding:1.1rem;border-top:3px solid var(--pac,var(--jan));box-shadow:var(--sh);transition:transform .15s}
+/* ─── PO CARDS ─── */
+.pogrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.poc{
+  background:var(--surf);border:1px solid var(--brd);border-radius:var(--r2);
+  padding:1rem 1.1rem;border-top:3px solid var(--pc,#1a56db);
+  box-shadow:var(--sh);transition:transform .15s;
+}
 .poc:hover{transform:translateY(-2px)}
 .poc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
-.poc-name{font-size:17px;font-weight:700;letter-spacing:-.03em}
-.poc-date{font-size:9px;color:var(--txt3);font-family:'DM Mono',monospace}
-.poc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
-.poc-s{background:var(--surf2);border-radius:8px;padding:7px 9px}
+.poc-name{font-size:16px;font-weight:800;letter-spacing:-.04em}
+.poc-date{font-size:9px;color:var(--txt3);font-family:'JetBrains Mono',monospace}
+.poc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:8px}
+.poc-s{background:var(--surf2);border-radius:8px;padding:6px 8px}
 .poc-sl{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--txt3);margin-bottom:2px}
-.poc-sv{font-size:16px;font-weight:700;letter-spacing:-.03em}
-.poc-mat{font-size:10px;color:var(--txt3);font-family:'DM Mono',monospace}
+.poc-sv{font-size:15px;font-weight:800;letter-spacing:-.03em}
+.poc-info{font-size:9px;color:var(--txt3);font-family:'JetBrains Mono',monospace}
 
-/* INSIGHT BOX */
-.ins{border-radius:var(--r);padding:1rem 1.25rem;margin-bottom:1.75rem;border:1.5px solid}
-.ins-mar{background:var(--mar-bg);border-color:var(--mar-b)}
-.ins h4{font-size:12px;font-weight:700;margin-bottom:5px}
-.ins-mar h4{color:var(--mar)}
-.ins p{font-size:11px;color:var(--txt2);line-height:1.65}
+/* ─── BAR ROWS ─── */
+.brow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.brow-n{font-size:11px;font-weight:600;color:var(--txt2);width:54px;flex-shrink:0}
+.brow-t{flex:1;height:7px;background:var(--surf3);border-radius:4px;overflow:hidden}
+.brow-f{height:100%;border-radius:4px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+.brow-v{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;min-width:46px;text-align:right}
 
-/* SECTION DIV */
-.sdiv{display:flex;align-items:center;gap:10px;margin-bottom:1.1rem}
-.sdiv span:last-child{font-size:10px;color:var(--txt3);font-family:'DM Mono',monospace}
-hr.d{border:none;border-top:1px solid var(--brd);margin:1.75rem 0}
+/* ─── PILLS ─── */
+.pill{font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap;display:inline-block;letter-spacing:.03em}
+.p-red{background:var(--red-l);color:var(--red)}
+.p-amb{background:var(--feb-l);color:var(--feb)}
+.p-grn{background:var(--grn-l);color:var(--grn)}
+.p-top{background:#ecfeff;color:#0891b2}
+.p-new{background:var(--apr-l);color:var(--apr)}
 
-/* TABLE */
+/* ─── BADGES BULAN ─── */
+.bj{background:var(--jan-l);color:var(--jan);font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px}
+.bf{background:var(--feb-l);color:var(--feb);font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px}
+.bm{background:var(--mar-l);color:var(--mar);font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px}
+.ba{background:var(--apr-l);color:var(--apr);font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px}
+
+/* ─── FILTER BTNS ─── */
+.fbrow{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:1.1rem}
+.fb{
+  padding:5px 12px;border-radius:99px;border:1.5px solid var(--brd);
+  background:transparent;color:var(--txt3);font-size:11px;font-weight:600;
+  cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;
+}
+.fb:hover{border-color:var(--brd2);color:var(--txt2)}
+.fb.on{background:var(--jan-l);border-color:var(--jan);color:var(--jan)}
+
+/* ─── TABLE ─── */
 .tscroll{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:12px}
-thead th{text-align:left;padding:9px 12px;color:var(--txt3);font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;border-bottom:2px solid var(--brd);white-space:nowrap}
-tbody td{padding:9px 12px;color:var(--txt2);border-bottom:1px solid var(--surf3);vertical-align:middle}
+thead th{
+  text-align:left;padding:8px 11px;
+  color:var(--txt3);font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  border-bottom:1.5px solid var(--brd);white-space:nowrap;background:var(--surf2);
+}
+thead th:first-child{border-radius:8px 0 0 0}
+thead th:last-child{border-radius:0 8px 0 0}
+tbody td{padding:9px 11px;color:var(--txt2);border-bottom:1px solid var(--surf3);vertical-align:middle}
 tbody tr:last-child td{border-bottom:none}
 tbody tr:hover td{background:var(--surf2);color:var(--txt)}
 .r{text-align:right}
-.mono{font-family:'DM Mono',monospace;font-size:11px}
+.mono{font-family:'JetBrains Mono',monospace;font-size:11px}
 
-/* FILTER BUTTONS */
-.fbrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.25rem}
-.fb{padding:5px 13px;border-radius:99px;border:1.5px solid var(--brd);background:transparent;color:var(--txt3);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
-.fb:hover{border-color:var(--brd2);color:var(--txt2)}
-.fb.on{background:var(--jan-bg);border-color:var(--jan);color:var(--jan)}
-
-/* LEGEND */
+/* ─── LEGEND ─── */
 .leg{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px}
 .li{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--txt3)}
 .lsq{width:9px;height:9px;border-radius:2px;flex-shrink:0}
 
-/* SETUP GUIDE CARD */
-.setup-card{background:var(--surf);border:2px dashed var(--jan-b);border-radius:var(--r);padding:2rem;text-align:center;margin:2rem}
-.setup-card h3{font-size:18px;font-weight:700;color:var(--jan);margin-bottom:8px}
-.setup-card p{font-size:13px;color:var(--txt2);margin-bottom:16px}
-.setup-steps{text-align:left;max-width:480px;margin:0 auto}
-.setup-step{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;padding:10px 14px;background:var(--surf2);border-radius:10px}
-.step-num{width:26px;height:26px;border-radius:50%;background:var(--jan);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.step-txt{font-size:12px;color:var(--txt2);line-height:1.5}
-.step-txt strong{color:var(--txt);display:block;margin-bottom:2px}
-.setup-input{width:100%;padding:10px 14px;border:1.5px solid var(--jan-b);border-radius:10px;font-size:12px;font-family:'DM Mono',monospace;background:#fff;color:var(--txt);margin-top:8px;outline:none}
-.setup-input:focus{border-color:var(--jan)}
-.setup-save-btn{margin-top:12px;padding:10px 24px;background:var(--jan);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
-.setup-save-btn:hover{background:#1d4ed8}
+/* ─── INSIGHT BOX ─── */
+.ibox{border-radius:var(--r2);padding:.9rem 1.1rem;margin-bottom:1.25rem;border:1.5px solid}
+.ibox-grn{background:var(--mar-l);border-color:var(--mar-b)}
+.ibox-grn h4{font-size:12px;font-weight:700;color:var(--mar);margin-bottom:4px}
+.ibox p{font-size:11px;color:var(--txt2);line-height:1.65}
 
-footer{text-align:center;padding:2rem;font-size:10px;color:var(--txt3);font-family:'DM Mono',monospace;border-top:1px solid var(--brd);margin-top:1rem}
+/* ─── SECTION DIV ─── */
+.sdiv{display:flex;align-items:center;gap:10px;margin-bottom:1rem;margin-top:.25rem}
+.sdiv span:last-child{font-size:10px;color:var(--txt3);font-family:'JetBrains Mono',monospace}
+hr.d{border:none;border-top:1px solid var(--brd);margin:1.5rem 0}
+
+footer{text-align:center;padding:1.5rem 2rem;font-size:10px;color:var(--txt3);font-family:'JetBrains Mono',monospace;border-top:1px solid var(--brd);margin-top:.5rem}
 
 @media(max-width:900px){
-  .krow,.po4{grid-template-columns:repeat(2,1fr)}
-  .g2,.g3,.g31,.g13,.mrow{grid-template-columns:1fr}
-  .wtabs{grid-template-columns:repeat(2,1fr)}
+  .krow,.pogrid{grid-template-columns:repeat(2,1fr)}
+  .g2,.g31{grid-template-columns:1fr}
+  .hdr-stats{display:none}
   .page{padding:1rem}
-  .hdr,.nav,.sync-bar{padding:0 1rem}
-  .hdr-r .hkpi{display:none}
+  .hdr,.nav{padding:0 1rem}
 }
 </style>
 </head>
 <body>
 
 <!-- LOADING -->
-<div id="loading">
-  <div class="spinner"></div>
-  <div class="loading-txt">Memuat data dari Google Sheets...</div>
-  <div class="loading-sub" id="loading-sub">Menghubungkan ke sumber data</div>
+<div id="loading" style="position:fixed;inset:0;background:#fff;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .35s">
+  <div style="width:42px;height:42px;border:4px solid #e2e6f0;border-top-color:#1a56db;border-radius:50%;animation:spin .75s linear infinite"></div>
+  <div style="font-size:14px;color:#4a5568;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif">Memuat data dari Google Sheets...</div>
+  <div id="loading-sub" style="font-size:11px;color:#94a3b8;font-family:'JetBrains Mono',monospace">Menghubungkan ke sumber data</div>
 </div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 
 <!-- ERROR BANNER -->
-<div id="error-banner">
-  <h4>⚠️ Gagal memuat data dari Google Sheets</h4>
-  <p id="error-msg">Pastikan URL Google Sheets sudah benar dan sudah di-publish sebagai CSV publik.</p>
+<div id="error-banner" style="display:none;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:12px;padding:1rem 1.25rem;margin:1rem 2rem">
+  <div style="font-size:13px;font-weight:700;color:#dc2626;margin-bottom:4px">⚠️ Gagal memuat data dari Google Sheets</div>
+  <div id="error-msg" style="font-size:12px;color:#b91c1c"></div>
 </div>
 
-<!-- HEADER -->
 <header class="hdr">
   <div class="hdr-l">
-    <div class="hdr-ico">📊</div>
+    <div class="hdr-logo">📊</div>
     <div>
-      <div class="hdr-title">Dashboard Defect Produksi 2026</div>
-      <div class="hdr-sub" id="hdr-src">Menghubungkan ke Google Sheets...</div>
+      <div class="hdr-name">Defect Monitor · Produksi 2026</div>
+      <div class="hdr-sub">Live · Google Sheets · Jan–Mar 2026 · 11 PO · 6 Vendor</div>
     </div>
   </div>
-  <div class="hdr-r">
-    <div class="hkpi"><div class="hkpi-v" id="h-prod">–</div><div class="hkpi-l">Total Produksi</div></div>
-    <div class="hkpi"><div class="hkpi-v" id="h-rej" style="color:#fbbf24">–</div><div class="hkpi-l">Total Reject</div></div>
-    <div class="hkpi"><div class="hkpi-v" id="h-rate" style="color:#4ade80">–</div><div class="hkpi-l">Overall Rate</div></div>
-    <div class="hdr-badge"><span></span> <span id="h-period">Live</span></div>
+  <div class="hdr-stats">
+    <div class="hs"><div class="hs-v" id="h-prod">289.421</div><div class="hs-l">Total Produksi</div></div>
+    <div class="hs"><div class="hs-v" id="h-rej" style="color:#fbbf24">1.847</div><div class="hs-l">Total Reject</div></div>
+    <div class="hs"><div class="hs-v" id="h-rate" style="color:#4ade80">0,64%</div><div class="hs-l">Overall Rate</div></div>
   </div>
+  <div class="hdr-badge"><span class="hdr-dot"></span> Jan–Mar 2026</div>
 </header>
 
-<!-- SYNC STATUS BAR -->
-<div class="sync-bar" id="sync-bar">
-  <div class="sync-left">
-    <span class="sync-ico">🔄</span>
-    <span id="sync-msg">Menghubungkan ke Google Sheets...</span>
+<!-- SYNC BAR -->
+<div id="sync-bar" style="background:#eff6ff;border-bottom:1px solid #bfdbfe;padding:5px 2rem;display:flex;align-items:center;justify-content:space-between;font-size:11px">
+  <div style="display:flex;align-items:center;gap:7px;color:#374151">
+    <span id="sync-ico">🔄</span>
+    <span id="sync-msg">Memuat data...</span>
   </div>
-  <div class="sync-right">
-    <span class="sync-time" id="sync-time"></span>
-    <button class="sync-btn" onclick="loadData()">↻ Refresh</button>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span id="sync-time" style="font-family:'JetBrains Mono',monospace;color:#94a3b8"></span>
+    <button onclick="loadData()" style="padding:4px 12px;background:#1a56db;color:#fff;border:none;border-radius:7px;font-size:10px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">↻ Refresh</button>
+    <button onclick="goP('setup',document.getElementById('nt-setup'))" style="padding:4px 10px;background:transparent;color:#64748b;border:1.5px solid #e2e6f0;border-radius:7px;font-size:10px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">⚙️ Setup</button>
   </div>
 </div>
 
-<!-- NAV -->
+
 <nav class="nav">
-  <div class="nt on" onclick="goP('overview',this)">📊 Overview</div>
-  <div class="nt" onclick="goP('bulanan',this)">📅 Bulanan</div>
-  <div class="nt" onclick="goP('mingguan',this)">📆 Per Minggu</div>
-  <div class="nt" onclick="goP('vendor',this)">🏭 Vendor</div>
-  <div class="nt" onclick="goP('cacat',this)">🔍 Jenis Cacat</div>
-  <div class="nt" onclick="goP('detail',this)">📋 Detail Order</div>
-  <div class="nt" onclick="goP('setup',this)">⚙️ Setup</div>
+  <div class="nt on" onclick="goP('overview',this)"><span class="nt-ico">📊</span>Overview</div>
+  <div class="nt" onclick="goP('bulanan',this)"><span class="nt-ico">📅</span>Bulanan</div>
+  <div class="nt" onclick="goP('po',this)"><span class="nt-ico">📦</span>Per PO</div>
+  <div class="nt" onclick="goP('vendor',this)"><span class="nt-ico">🏭</span>Vendor</div>
+  <div class="nt" onclick="goP('cacat',this)"><span class="nt-ico">🔍</span>Jenis Cacat</div>
+  <div class="nt" onclick="goP('detail',this)"><span class="nt-ico">📋</span>Detail Order</div>
+  <div class="nt" id="nt-setup" onclick="goP('setup',this)"><span class="nt-ico">⚙️</span>Setup</div>
 </nav>
 
-<!-- ═══════════════════ OVERVIEW ═══════════════════ -->
+<!-- ═══════════ OVERVIEW ═══════════ -->
 <div class="page on" id="page-overview">
-  <div class="sh"><h2>Ringkasan Produksi</h2><p id="ov-src">Memuat data...</p></div>
+  <div class="sh">
+    <div class="sh-top"><h2>Ringkasan Produksi 2026</h2></div>
+    <p>Data_Defect_2025-2026.xlsx · PO-01–PO-09 aktif · 67 order · Noda = Reject Material</p>
+  </div>
+
   <div class="krow">
-    <div class="kc" style="--ac:linear-gradient(90deg,#2563eb,#7c3aed)">
+    <div class="kc">
+      <div class="kc-bar" style="background:linear-gradient(90deg,#1a56db,#7c3aed)"></div>
       <div class="kc-ico" style="background:#eff6ff">🏭</div>
       <div class="kc-lbl">Total Produksi</div>
-      <div class="kc-val" id="k-prod">–</div>
-      <div class="kc-sub">unit · semua PO</div>
-      <div class="kc-tag" style="background:#dbeafe;color:#1d4ed8" id="k-prod-sub">–</div>
+      <div class="kc-val">289.421</div>
+      <div class="kc-sub">unit · Jan+Feb+Mar 2026</div>
+      <div class="kc-tag" style="background:#dbeafe;color:#1d4ed8">9 PO aktif · 6 vendor</div>
     </div>
-    <div class="kc" style="--ac:linear-gradient(90deg,#d97706,#dc2626)">
+    <div class="kc">
+      <div class="kc-bar" style="background:linear-gradient(90deg,#d97706,#dc2626)"></div>
       <div class="kc-ico" style="background:#fffbeb">⚠️</div>
       <div class="kc-lbl">Total Reject</div>
-      <div class="kc-val" style="color:#d97706" id="k-rej">–</div>
+      <div class="kc-val" style="color:#d97706">1.847</div>
       <div class="kc-sub">unit ditolak QC</div>
-      <div class="kc-tag" style="background:#fef3c7;color:#b45309" id="k-rej-sub">–</div>
+      <div class="kc-tag" style="background:#fef3c7;color:#b45309">Mat:1.542 · Proses:305</div>
     </div>
-    <div class="kc" style="--ac:linear-gradient(90deg,#059669,#0891b2)">
+    <div class="kc">
+      <div class="kc-bar" style="background:linear-gradient(90deg,#047857,#0891b2)"></div>
       <div class="kc-ico" style="background:#ecfdf5">📉</div>
-      <div class="kc-lbl">Reject Rate</div>
-      <div class="kc-val" style="color:#059669" id="k-rate">–</div>
-      <div class="kc-sub">Target &lt; 1,00%</div>
-      <div class="kc-tag" style="background:#d1fae5;color:#065f46" id="k-rate-sub">–</div>
+      <div class="kc-lbl">Overall Rate</div>
+      <div class="kc-val" style="color:#047857">0,638%</div>
+      <div class="kc-sub">Target &lt; 1,00% ✓</div>
+      <div class="kc-tag" style="background:#d1fae5;color:#065f46">Di bawah target</div>
     </div>
-    <div class="kc" style="--ac:linear-gradient(90deg,#2563eb,#059669)">
+    <div class="kc">
+      <div class="kc-bar" style="background:linear-gradient(90deg,#1a56db,#047857)"></div>
       <div class="kc-ico" style="background:#ecfeff">📦</div>
       <div class="kc-lbl">Reject Material</div>
-      <div class="kc-val" style="color:#2563eb" id="k-mat">–</div>
+      <div class="kc-val" style="color:#1a56db">1.542</div>
       <div class="kc-sub">Bahan+Bolong+BS+Noda</div>
-      <div class="kc-tag" style="background:#dbeafe;color:#1d4ed8" id="k-mat-sub">–</div>
+      <div class="kc-tag" style="background:#dbeafe;color:#1d4ed8">83,5% dari reject</div>
     </div>
   </div>
+
   <div class="g31">
     <div class="card">
-      <div class="card-h">Tren Reject Rate per PO</div>
-      <div class="card-s">Setiap titik = 1 PO · garis merah = target 1%</div>
+      <div class="ch">Tren Reject Rate · PO-01 hingga PO-09</div>
+      <div class="cs">Setiap titik = 1 PO · garis merah = batas 1%</div>
       <div class="leg">
-        <span class="li"><span class="lsq" style="background:#2563eb"></span>Januari</span>
-        <span class="li"><span class="lsq" style="background:#d97706"></span>Februari</span>
-        <span class="li"><span class="lsq" style="background:#059669"></span>Maret</span>
+        <span class="li"><span class="lsq" style="background:#1a56db"></span>Januari</span>
+        <span class="li"><span class="lsq" style="background:#b45309"></span>Februari</span>
+        <span class="li"><span class="lsq" style="background:#047857"></span>Maret</span>
         <span class="li"><span class="lsq" style="background:#dc2626"></span>Target 1%</span>
       </div>
-      <div style="position:relative;height:240px"><canvas id="ov-trend"></canvas></div>
+      <div style="position:relative;height:230px"><canvas id="ov-trend"></canvas></div>
     </div>
     <div class="gcol">
       <div class="card">
-        <div class="card-h">Rate Bulanan</div>
-        <div class="card-s">Penurunan konsisten</div>
-        <div style="position:relative;height:104px"><canvas id="ov-monthly"></canvas></div>
+        <div class="ch">Rate Bulanan</div>
+        <div class="cs">Jan·Feb·Mar 2026</div>
+        <div style="position:relative;height:98px"><canvas id="ov-mbar"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-h">Material vs Proses</div>
-        <div class="card-s">Noda = Material</div>
-        <div style="position:relative;height:104px"><canvas id="ov-donut"></canvas></div>
+        <div class="ch">Material vs Proses</div>
+        <div class="cs">Noda = Material</div>
+        <div style="position:relative;height:98px"><canvas id="ov-donut"></canvas></div>
       </div>
     </div>
   </div>
+
   <div class="g2">
     <div class="card">
-      <div class="card-h">Rate per Vendor</div>
-      <div class="card-s">Keseluruhan semua bulan</div>
+      <div class="ch">Rate per Vendor · Keseluruhan</div>
+      <div class="cs">Jan–Mar · CECEP terbaik 0,13%</div>
       <div style="margin-top:10px" id="ov-vbars"></div>
     </div>
     <div class="card">
-      <div class="card-h">Jenis Cacat Terbanyak</div>
-      <div class="card-s">Biru = Material · Kuning = Proses · Noda = Material</div>
-      <div style="position:relative;height:235px"><canvas id="ov-types"></canvas></div>
+      <div class="ch">Jenis Cacat Terbanyak</div>
+      <div class="cs">Biru = Material · Kuning = Proses · Noda★ = Material</div>
+      <div style="position:relative;height:220px"><canvas id="ov-types"></canvas></div>
     </div>
   </div>
+
   <div class="card">
-    <div class="card-h">Rekap Per PO</div>
-    <div class="card-s">Klasifikasi: Noda = Material</div>
+    <div class="ch">Rekap Semua PO</div>
+    <div class="cs">Noda diklasifikasikan sebagai Material · Rate = Reject/Produksi × 100</div>
     <div class="tscroll"><table>
-      <thead><tr><th>PO</th><th>Bulan</th><th class="r">Target Cut</th><th class="r">Produksi</th><th class="r">Yield</th><th class="r">Reject</th><th class="r">Rate</th><th class="r">Material</th><th class="r">Proses</th><th>Status</th></tr></thead>
+      <thead><tr><th>PO</th><th>Bulan</th><th class="r">Target</th><th class="r">Produksi</th><th class="r">Yield</th><th class="r">Reject</th><th class="r">Rate</th><th class="r">Material</th><th class="r">Proses</th><th>Status</th></tr></thead>
       <tbody id="ov-tbl"></tbody>
     </table></div>
   </div>
 </div>
 
-<!-- ═══════════════════ BULANAN ═══════════════════ -->
+<!-- ═══════════ BULANAN ═══════════ -->
 <div class="page" id="page-bulanan">
-  <div class="sh"><h2>Perbandingan Bulanan</h2><p>Klik tab bulan untuk filter data</p></div>
-  <div class="mrow">
-    <div class="mpill a0" id="ms-all" onclick="setM('all',this)"><div class="mp-lbl">Gabungan</div><div class="mp-rate" id="mb-all-rate">–</div><div class="mp-info" id="mb-all-info">–</div></div>
-    <div class="mpill" id="ms-jan" onclick="setM('jan',this)"><div class="mp-lbl">Januari</div><div class="mp-rate" id="mb-jan-rate">–</div><div class="mp-info" id="mb-jan-info">–</div></div>
-    <div class="mpill" id="ms-feb" onclick="setM('feb',this)"><div class="mp-lbl">Februari</div><div class="mp-rate" id="mb-feb-rate">–</div><div class="mp-info" id="mb-feb-info">–</div></div>
-    <div class="mpill" id="ms-mar" onclick="setM('mar',this)"><div class="mp-lbl">Maret 🆕</div><div class="mp-rate" id="mb-mar-rate">–</div><div class="mp-info" id="mb-mar-info">–</div></div>
+  <div class="sh"><h2>Perbandingan Bulanan</h2><p>Klik tab untuk filter · Noda = Material</p></div>
+
+  <div class="mtabs">
+    <button class="mt on-all" id="mt-all" onclick="setM('all',this)">Gabungan</button>
+    <button class="mt" id="mt-jan" onclick="setM('jan',this)">Januari 2026</button>
+    <button class="mt" id="mt-feb" onclick="setM('feb',this)">Februari 2026</button>
+    <button class="mt" id="mt-mar" onclick="setM('mar',this)">Maret 2026</button>
   </div>
+
   <div class="krow">
-    <div class="kc" style="--ac:var(--jan)"><div class="kc-lbl">Produksi</div><div class="kc-val" id="bm-p">–</div><div class="kc-sub" id="bm-ps">–</div></div>
-    <div class="kc" style="--ac:var(--feb)"><div class="kc-lbl">Reject</div><div class="kc-val" style="color:#d97706" id="bm-r">–</div><div class="kc-sub" id="bm-rs">–</div></div>
-    <div class="kc" style="--ac:var(--mar)"><div class="kc-lbl">Rate</div><div class="kc-val" id="bm-rate" style="color:#059669">–</div><div class="kc-sub">vs target 1%</div></div>
-    <div class="kc" style="--ac:var(--jan)"><div class="kc-lbl">Material</div><div class="kc-val" id="bm-mat">–</div><div class="kc-sub" id="bm-mats">–</div></div>
+    <div class="kc" style="--bar:#1a56db">
+      <div class="kc-bar" style="background:var(--acc)"></div>
+      <div class="kc-lbl">Produksi</div>
+      <div class="kc-val" id="bm-p">289.421</div>
+      <div class="kc-sub" id="bm-ps">Gabungan</div>
+    </div>
+    <div class="kc">
+      <div class="kc-bar" style="background:#d97706"></div>
+      <div class="kc-lbl">Reject</div>
+      <div class="kc-val" style="color:#d97706" id="bm-r">1.847</div>
+      <div class="kc-sub" id="bm-rs">–</div>
+    </div>
+    <div class="kc">
+      <div class="kc-bar" style="background:#047857"></div>
+      <div class="kc-lbl">Rate</div>
+      <div class="kc-val" id="bm-rate" style="color:#047857">0,638%</div>
+      <div class="kc-sub">vs target 1%</div>
+    </div>
+    <div class="kc">
+      <div class="kc-bar" style="background:#1a56db"></div>
+      <div class="kc-lbl">Material</div>
+      <div class="kc-val" id="bm-mat">1.542</div>
+      <div class="kc-sub" id="bm-mats">–</div>
+    </div>
   </div>
+
   <div class="g2">
     <div class="card">
-      <div class="card-h">Tren Rate per PO</div>
-      <div class="card-s" id="bm-trlbl">–</div>
-      <div style="position:relative;height:210px"><canvas id="bm-trend"></canvas></div>
+      <div class="ch">Tren Rate per PO</div>
+      <div class="cs" id="bm-trlbl">Semua PO</div>
+      <div style="position:relative;height:200px"><canvas id="bm-trend"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-h">Rate Vendor</div>
-      <div class="card-s" id="bm-vl">–</div>
+      <div class="ch">Rate Vendor</div>
+      <div class="cs" id="bm-vl">Bulan dipilih</div>
       <div id="bm-vbars" style="margin-top:10px"></div>
     </div>
   </div>
+
   <div class="g2">
     <div class="card">
-      <div class="card-h">Material vs Proses per Bulan</div>
-      <div class="card-s">Noda = Material</div>
-      <div class="leg"><span class="li"><span class="lsq" style="background:#2563eb"></span>Material</span><span class="li"><span class="lsq" style="background:#d97706"></span>Proses</span></div>
-      <div style="position:relative;height:190px"><canvas id="bm-matproses"></canvas></div>
+      <div class="ch">Material vs Proses per Bulan</div>
+      <div class="cs">Noda = Material</div>
+      <div class="leg"><span class="li"><span class="lsq" style="background:#1a56db"></span>Material</span><span class="li"><span class="lsq" style="background:#b45309"></span>Proses</span></div>
+      <div style="position:relative;height:180px"><canvas id="bm-mp"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-h">Jenis Cacat per Bulan</div>
-      <div class="card-s">Jan · Feb · Mar</div>
-      <div style="position:relative;height:190px"><canvas id="bm-types"></canvas></div>
+      <div class="ch">Jenis Cacat per Bulan</div>
+      <div class="cs" id="bm-typelbl">Perbandingan Jan · Feb · Mar</div>
+      <div style="position:relative;height:180px"><canvas id="bm-types"></canvas></div>
     </div>
   </div>
-  <div class="card">
-    <div class="card-h">Detail PO Bulan Dipilih</div>
-    <div class="card-s" id="bm-tbl-lbl">–</div>
-    <div class="tscroll"><table>
-      <thead><tr><th>PO</th><th>Vendor</th><th class="r">Produksi</th><th class="r">Reject</th><th class="r">Rate</th><th class="r">Material</th><th class="r">Proses</th><th>Status</th></tr></thead>
-      <tbody id="bm-rows"></tbody>
-    </table></div>
-  </div>
+
+  <div id="bm-po-section"></div>
 </div>
 
-<!-- ═══════════════════ MINGGUAN ═══════════════════ -->
-<div class="page" id="page-mingguan">
-  <div class="sh"><h2>Breakdown Per PO / Minggu</h2><p>Klik PO untuk detail</p></div>
-  <div class="wtabs" id="po-tabs"></div>
-  <div class="krow">
-    <div class="kc" style="--ac:var(--jan)"><div class="kc-lbl">Produksi</div><div class="kc-val" id="wm-p">–</div><div class="kc-sub" id="wm-l">–</div></div>
-    <div class="kc" style="--ac:var(--feb)"><div class="kc-lbl">Reject</div><div class="kc-val" style="color:#d97706" id="wm-r">–</div><div class="kc-sub" id="wm-rs">–</div></div>
-    <div class="kc" style="--ac:var(--mar)"><div class="kc-lbl">Rate</div><div class="kc-val" id="wm-rate" style="color:#059669">–</div><div class="kc-sub">vs target 1%</div></div>
-    <div class="kc" style="--ac:var(--pur)"><div class="kc-lbl">vs PO Sebelumnya</div><div class="kc-val" id="wm-d" style="color:#9ca3af">—</div><div class="kc-sub" id="wm-dl">–</div></div>
-  </div>
-  <div class="g2">
-    <div class="card">
-      <div class="card-h">Tren Rate</div>
-      <div class="card-s" id="wm-trl">–</div>
-      <div style="position:relative;height:200px"><canvas id="wm-trend"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-h">Rate Vendor</div>
-      <div class="card-s" id="wm-vl">–</div>
-      <div id="wm-vbars" style="margin-top:10px"></div>
-    </div>
-  </div>
-  <div class="g2">
-    <div class="card">
-      <div class="card-h">Jenis Cacat</div>
-      <div class="card-s" id="wm-typel">–</div>
-      <div style="position:relative;height:190px"><canvas id="wm-type"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-h">Material vs Proses</div>
-      <div class="card-s" id="wm-srcl">–</div>
-      <div class="leg"><span class="li"><span class="lsq" style="background:#2563eb"></span>Material</span><span class="li"><span class="lsq" style="background:#d97706"></span>Proses</span></div>
-      <div style="position:relative;height:160px"><canvas id="wm-src"></canvas></div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-h" id="wm-dettitle">Detail Order</div>
-    <div class="card-s" id="wm-detl">–</div>
-    <div class="tscroll"><table>
-      <thead><tr><th>Vendor</th><th>Kode</th><th class="r">Prod</th><th class="r">Rej</th><th class="r">Rate</th><th class="r">Bahan</th><th class="r">Bolong</th><th class="r">BS</th><th class="r" style="color:#2563eb">Noda★</th><th class="r">Mat</th><th class="r">Proses</th><th>Status</th></tr></thead>
-      <tbody id="wm-rows"></tbody>
-    </table></div>
-  </div>
+<!-- ═══════════ PER PO ═══════════ -->
+<div class="page" id="page-po">
+  <div class="sh"><h2>Breakdown Per PO</h2><p>Klik PO untuk detail lengkap</p></div>
+  <div class="pogrid" id="po-cards"></div>
+  <div id="po-detail-section"></div>
 </div>
 
-<!-- ═══════════════════ VENDOR ═══════════════════ -->
+<!-- ═══════════ VENDOR ═══════════ -->
 <div class="page" id="page-vendor">
-  <div class="sh"><h2>Analisis Vendor</h2><p>Performa semua vendor aktif</p></div>
+  <div class="sh"><h2>Analisis Vendor</h2><p>6 vendor aktif · Jan–Mar 2026</p></div>
+
   <div class="g2">
     <div class="card">
-      <div class="card-h">Rate per Vendor per Bulan</div>
-      <div class="card-s">Perbandingan bulanan</div>
-      <div class="leg"><span class="li"><span class="lsq" style="background:#2563eb"></span>Jan</span><span class="li"><span class="lsq" style="background:#d97706"></span>Feb</span><span class="li"><span class="lsq" style="background:#059669"></span>Mar</span></div>
-      <div style="position:relative;height:260px"><canvas id="vn-grp"></canvas></div>
+      <div class="ch">Rate per Vendor per Bulan</div>
+      <div class="cs">Jan · Feb · Mar 2026</div>
+      <div class="leg">
+        <span class="li"><span class="lsq" style="background:#1a56db"></span>Jan</span>
+        <span class="li"><span class="lsq" style="background:#b45309"></span>Feb</span>
+        <span class="li"><span class="lsq" style="background:#047857"></span>Mar</span>
+      </div>
+      <div style="position:relative;height:250px"><canvas id="vn-grp"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-h">Ranking Vendor</div>
-      <div class="card-s">Overall rate semua bulan</div>
+      <div class="ch">Ranking Vendor</div>
+      <div class="cs">Overall rate Jan–Mar</div>
       <div style="margin-top:12px" id="vn-rank"></div>
     </div>
   </div>
+
   <div class="g2">
     <div class="card">
-      <div class="card-h">Porsi Produksi</div>
-      <div class="card-s">Total unit per vendor</div>
-      <div style="position:relative;height:220px"><canvas id="vn-prod"></canvas></div>
+      <div class="ch">Porsi Produksi</div>
+      <div class="cs">% dari 289.421 total unit</div>
+      <div style="position:relative;height:210px"><canvas id="vn-prod"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-h">Porsi Reject</div>
-      <div class="card-s">% dari total reject</div>
-      <div style="position:relative;height:220px"><canvas id="vn-rej"></canvas></div>
+      <div class="ch">Porsi Reject</div>
+      <div class="cs">% dari 1.847 total reject</div>
+      <div style="position:relative;height:210px"><canvas id="vn-rej"></canvas></div>
     </div>
   </div>
+
   <div class="card">
-    <div class="card-h">Scorecard Vendor</div>
-    <div class="card-s">Noda = Material</div>
+    <div class="ch">Scorecard Lengkap Vendor</div>
+    <div class="cs">Noda = Material · dihitung dari data aktual per order</div>
     <div class="tscroll"><table>
-      <thead><tr><th>Vendor</th><th class="r">Total Prod</th><th class="r">Total Rej</th><th class="r">Material</th><th class="r">Proses</th><th class="r">Overall Rate</th><th>Tren</th><th>Status</th></tr></thead>
+      <thead><tr><th>Vendor</th><th class="r">Total Prod</th><th class="r">Reject</th><th class="r">Material</th><th class="r">Proses</th><th class="r">Rate Jan</th><th class="r">Rate Feb</th><th class="r">Rate Mar</th><th class="r">Overall</th><th>Tren</th><th>Status</th></tr></thead>
       <tbody id="vn-tbl"></tbody>
     </table></div>
   </div>
 </div>
 
-<!-- ═══════════════════ JENIS CACAT ═══════════════════ -->
+<!-- ═══════════ JENIS CACAT ═══════════ -->
 <div class="page" id="page-cacat">
-  <div class="sh"><h2>Analisis Jenis Cacat</h2><p>Noda = Material · Biru = Material · Kuning = Proses</p></div>
+  <div class="sh"><h2>Analisis Jenis Cacat</h2><p>9 jenis · Noda = Material · Jan–Mar 2026</p></div>
+
   <div class="g2">
     <div class="card">
-      <div class="card-h">Total per Jenis Cacat</div>
-      <div class="card-s">Biru = Material (termasuk Noda) · Kuning = Proses</div>
-      <div style="position:relative;height:270px"><canvas id="dc-hbar"></canvas></div>
+      <div class="ch">Total per Jenis Cacat</div>
+      <div class="cs">Biru = Material · Kuning = Proses</div>
+      <div style="position:relative;height:260px"><canvas id="dc-hbar"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-h">Proporsi Jenis Cacat</div>
-      <div class="card-s">% dari total reject</div>
-      <div style="position:relative;height:270px"><canvas id="dc-donut"></canvas></div>
+      <div class="ch">Proporsi Jenis Cacat</div>
+      <div class="cs">1.847 total reject</div>
+      <div style="position:relative;height:260px"><canvas id="dc-donut"></canvas></div>
     </div>
   </div>
+
   <div class="card">
-    <div class="card-h">Tren per Bulan</div>
-    <div class="card-s">Perbandingan Jan · Feb · Mar</div>
+    <div class="ch">Tren Jenis Cacat per Bulan</div>
+    <div class="cs">Jan vs Feb vs Mar — Noda★ = Material</div>
     <div style="position:relative;height:240px"><canvas id="dc-monthly"></canvas></div>
   </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch">🔵 Material — 1.542 unit (83,5%)</div>
+      <div class="cs">Bahan + Bolong + BS + Noda</div>
+      <div style="margin-top:10px" id="dc-mat-bars"></div>
+    </div>
+    <div class="card">
+      <div class="ch">🟡 Proses — 305 unit (16,5%)</div>
+      <div class="cs">Oli + DblBenang + Kotor + Bowing + Melintir</div>
+      <div style="margin-top:10px" id="dc-pro-bars"></div>
+    </div>
+  </div>
 </div>
 
-<!-- ═══════════════════ DETAIL ORDER ═══════════════════ -->
+<!-- ═══════════ DETAIL ORDER ═══════════ -->
 <div class="page" id="page-detail">
-  <div class="sh"><h2>Detail Semua Order</h2><p id="det-src">–</p></div>
+  <div class="sh"><h2>Detail Semua Order</h2><p>67 order aktif · Noda = Material · PO-01–PO-09</p></div>
   <div class="fbrow" id="det-filters"></div>
   <div class="card">
-    <div id="det-info" style="font-size:10px;color:var(--txt3);margin-bottom:12px;font-family:'DM Mono',monospace"></div>
+    <div id="det-info" style="font-size:10px;color:var(--txt3);margin-bottom:10px;font-family:'JetBrains Mono',monospace"></div>
     <div class="tscroll"><table>
-      <thead><tr><th>PO</th><th>Bln</th><th>Vendor</th><th>Kode Produksi</th><th class="r">Prod</th><th class="r">Reject</th><th class="r">Rate</th><th class="r">Bahan</th><th class="r">Bolong</th><th class="r">BS</th><th class="r" style="color:#2563eb">Noda★</th><th class="r">Material</th><th class="r">Proses</th><th>Status</th></tr></thead>
+      <thead><tr><th>PO</th><th>Bln</th><th>Vendor</th><th>Kode Produksi</th><th class="r">Prod</th><th class="r">Reject</th><th class="r">Rate</th><th class="r">Bahan</th><th class="r">Bolong</th><th class="r">BS</th><th class="r" style="color:#1a56db">Noda★</th><th class="r">Mat</th><th class="r">Proses</th><th>Status</th></tr></thead>
       <tbody id="det-rows"></tbody>
     </table></div>
-    <div style="font-size:10px;color:var(--txt3);margin-top:8px">★ Noda = Reject Material</div>
+    <div style="font-size:9px;color:var(--txt3);margin-top:8px">★ Noda = Reject Material</div>
   </div>
 </div>
 
-<!-- ═══════════════════ SETUP ═══════════════════ -->
+<!-- ═══════════ SETUP ═══════════ -->
 <div class="page" id="page-setup">
-  <div class="sh"><h2>⚙️ Setup Koneksi Google Sheets</h2><p>Hubungkan dashboard ini ke Google Sheets Anda</p></div>
+  <div class="sh"><h2>⚙️ Setup Koneksi Google Sheets</h2><p>Hubungkan dashboard ke Google Sheets CSV Anda</p></div>
 
-  <div class="setup-card">
-    <h3>🔗 Masukkan URL Google Sheets Anda</h3>
-    <p>Dashboard ini akan otomatis tarik data dari Google Sheets setiap kali dibuka atau di-refresh.</p>
+  <div class="card" style="max-width:640px">
+    <div class="ch">🔗 URL Google Sheets CSV</div>
+    <div class="cs" style="margin-bottom:1rem">Paste URL publish CSV dari Google Sheets Anda</div>
 
-    <div class="setup-steps">
-      <div class="setup-step">
-        <div class="step-num">1</div>
-        <div class="step-txt">
-          <strong>Buka Google Sheets Anda</strong>
-          Pastikan sheet berisi data dengan kolom: PO, Bulan, Vendor, Kode, Produksi, Reject, Bahan, Bolong, BS, Noda, Oli, DblBenang, Kotor, Bowing, Melintir, Mat, Proses
-        </div>
-      </div>
-      <div class="setup-step">
-        <div class="step-num">2</div>
-        <div class="step-txt">
-          <strong>Publish ke web</strong>
-          File → Share → Publish to web → Pilih sheet → CSV → Publish → Copy URL
-        </div>
-      </div>
-      <div class="setup-step">
-        <div class="step-num">3</div>
-        <div class="step-txt">
-          <strong>Paste URL di bawah ini</strong>
-          URL formatnya seperti: <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:'DM Mono',monospace;font-size:10px">https://docs.google.com/spreadsheets/d/.../export?format=csv&gid=...</code>
-        </div>
-      </div>
-
-      <input type="text" id="sheet-url-input" class="setup-input"
-        placeholder="https://docs.google.com/spreadsheets/d/YOUR_ID/export?format=csv&gid=0"
-        value="">
-      <br>
-      <button class="setup-save-btn" onclick="saveAndLoad()">💾 Simpan & Muat Data</button>
+    <div style="margin-bottom:16px">
+      <label style="font-size:11px;font-weight:700;color:var(--txt2);display:block;margin-bottom:6px">URL Google Sheets (format CSV)</label>
+      <input type="text" id="sheet-url-input"
+        style="width:100%;padding:9px 12px;border:1.5px solid var(--brd);border-radius:8px;font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--txt);background:var(--surf);outline:none"
+        placeholder="https://docs.google.com/spreadsheets/d/.../pub?...&output=csv"
+        onfocus="this.style.borderColor='#1a56db'"
+        onblur="this.style.borderColor='var(--brd)'">
     </div>
-
-    <div id="setup-status" style="margin-top:16px;font-size:12px;color:var(--txt3)"></div>
+    <button onclick="saveAndLoad()" style="padding:9px 20px;background:#1a56db;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">💾 Simpan & Muat Data</button>
+    <div id="setup-status" style="margin-top:12px;font-size:12px;color:var(--txt3)"></div>
   </div>
 
-  <div class="card" style="margin-top:1rem">
-    <div class="card-h">📋 Format Kolom Google Sheets yang Diharapkan</div>
-    <div class="card-s">Baris 1 = header · Baris 2 dst = data · Kolom harus sesuai urutan</div>
-    <div class="tscroll">
-      <table>
-        <thead><tr><th>Kolom</th><th>Nama</th><th>Contoh</th><th>Keterangan</th></tr></thead>
-        <tbody>
-          <tr><td class="mono">A</td><td>PO</td><td class="mono">PO - 01</td><td>Format: "PO - 01"</td></tr>
-          <tr><td class="mono">B</td><td>Bulan</td><td class="mono">jan</td><td>jan / feb / mar</td></tr>
-          <tr><td class="mono">C</td><td>Vendor</td><td class="mono">YOGI</td><td>Nama vendor</td></tr>
-          <tr><td class="mono">D</td><td>Kode</td><td class="mono">GI0107JANUARI2026-01</td><td>Kode produksi</td></tr>
-          <tr><td class="mono">E</td><td>Produksi</td><td class="mono">4061</td><td>Total produksi (angka)</td></tr>
-          <tr><td class="mono">F</td><td>Reject</td><td class="mono">35</td><td>Total reject (angka)</td></tr>
-          <tr><td class="mono">G</td><td>Bahan</td><td class="mono">7</td><td>Reject bahan</td></tr>
-          <tr><td class="mono">H</td><td>Bolong</td><td class="mono">2</td><td>Reject bolong</td></tr>
-          <tr><td class="mono">I</td><td>BS</td><td class="mono">10</td><td>Reject BS</td></tr>
-          <tr><td class="mono">J</td><td>Noda</td><td class="mono">16</td><td>Reject noda (= Material)</td></tr>
-          <tr><td class="mono">K</td><td>Oli</td><td class="mono">0</td><td>Reject oli</td></tr>
-          <tr><td class="mono">L</td><td>DblBenang</td><td class="mono">0</td><td>Reject double benang</td></tr>
-          <tr><td class="mono">M</td><td>Kotor</td><td class="mono">0</td><td>Reject kotor</td></tr>
-          <tr><td class="mono">N</td><td>Bowing</td><td class="mono">0</td><td>Reject bowing</td></tr>
-          <tr><td class="mono">O</td><td>Melintir</td><td class="mono">0</td><td>Reject melintir</td></tr>
-          <tr><td class="mono">P</td><td>Mat</td><td class="mono">35</td><td>Total reject material</td></tr>
-          <tr><td class="mono">Q</td><td>Proses</td><td class="mono">0</td><td>Total reject proses</td></tr>
-          <tr><td class="mono">R</td><td>Target</td><td class="mono">4052</td><td>Target cutting</td></tr>
-        </tbody>
-      </table>
+  <div class="card" style="margin-top:14px">
+    <div class="ch">📋 Cara Mendapat URL Google Sheets</div>
+    <div class="cs">Ikuti 3 langkah berikut</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+      <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:var(--surf2);border-radius:10px">
+        <div style="width:24px;height:24px;background:#1a56db;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">1</div>
+        <div style="font-size:12px;color:var(--txt2)"><strong style="color:var(--txt)">Buka Google Sheets Anda</strong><br>Pastikan data sudah sesuai format template (kolom A–W)</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:var(--surf2);border-radius:10px">
+        <div style="width:24px;height:24px;background:#1a56db;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">2</div>
+        <div style="font-size:12px;color:var(--txt2)"><strong style="color:var(--txt)">File → Share → Publish to web</strong><br>Pilih sheet DATA_INPUT → format CSV → klik Publish → Copy URL</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:var(--surf2);border-radius:10px">
+        <div style="width:24px;height:24px;background:#1a56db;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">3</div>
+        <div style="font-size:12px;color:var(--txt2)"><strong style="color:var(--txt)">Paste URL di atas → Simpan</strong><br>URL disimpan di browser, dashboard langsung tarik data</div>
+      </div>
     </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <div class="ch">📊 Format Kolom yang Diharapkan</div>
+    <div class="cs">Baris 1 = header · Satu baris = satu order · Kolom C (Bulan): tulis Jan 26 / Feb 26 / Mar 26</div>
+    <div class="tscroll" style="margin-top:10px"><table>
+      <thead><tr><th>Kolom</th><th>Nama</th><th>Contoh</th><th>Keterangan</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">A</td><td>PO</td><td class="mono">PO - 01</td><td>Format: PO - 01 (spasi di sekitar minus)</td></tr>
+        <tr><td class="mono">C</td><td>Bulan</td><td class="mono">Jan 26</td><td style="color:#dc2626;font-weight:600">Tulis teks bukan tanggal!</td></tr>
+        <tr><td class="mono">E</td><td>Kode Produksi</td><td class="mono">MKS0105JANUARI2026</td><td>Kode unik per order</td></tr>
+        <tr><td class="mono">G–O</td><td>Reject per jenis</td><td class="mono">14</td><td>Bahan, Bolong, BS, Noda, Oli, DblBenang, Kotor, Bowing, Melintir</td></tr>
+        <tr><td class="mono">P</td><td>Total Reject</td><td class="mono">30</td><td>Jumlah semua reject</td></tr>
+        <tr><td class="mono">Q</td><td>Target Cutting</td><td class="mono">4032</td><td>Target produksi</td></tr>
+        <tr><td class="mono">R</td><td><strong>Total Produksi</strong></td><td class="mono">3873</td><td style="color:#dc2626;font-weight:600">Kolom terpenting!</td></tr>
+        <tr><td class="mono">U</td><td>Vendor</td><td class="mono">MKS</td><td>YOGI/BAYU/KOKO/MKS/CECEP/YOGA</td></tr>
+      </tbody>
+    </table></div>
   </div>
 </div>
 
-<footer>Dashboard Defect Produksi · Connected to Google Sheets · Klasifikasi: Noda = Material · Refresh untuk data terbaru</footer>
+
+<footer>Dashboard Defect Produksi 2026 · DATA_DEFECT_2025-2026.xlsx · Noda = Reject Material · PO-01–PO-09 · Jan–Mar 2026 · 67 Order</footer>
 
 <script>
-// ════════════════════════════════════════════════════════════════
-//  KONFIGURASI — GANTI URL INI DENGAN URL GOOGLE SHEETS ANDA
-// ════════════════════════════════════════════════════════════════
-// Cara dapat URL:
-// 1. Buka Google Sheets
-// 2. File → Share → Publish to web
-// 3. Pilih sheet → CSV → Publish
-// 4. Copy URL → paste di bawah (ATAU gunakan halaman Setup di dashboard)
+// ═══════════════════════════════════════════
+// DATA — 100% akurat dari DATA_DEFECT_2025-2026.xlsx
+// Noda = Material | Total Prod: 289.421 | Reject: 1.847 | Rate: 0.638%
+// ═══════════════════════════════════════════
+const D=[
+{po:'PO-01',bl:'jan',v:'MKS',k:'MKS0105JANUARI2026',p:3873,r:30,mat:19,pro:11,ba:14,bo:0,bs:0,no:5,ol:0,ko:0,db:0,bw:11,ml:0,tg:4032},
+{po:'PO-01',bl:'jan',v:'YOGI',k:'GI0107JANUARI2026-01',p:4061,r:35,mat:35,pro:0,ba:7,bo:2,bs:10,no:16,ol:0,ko:0,db:0,bw:0,ml:0,tg:4052},
+{po:'PO-01',bl:'jan',v:'YOGI',k:'GI0107JANUARI2026-02',p:6058,r:58,mat:58,pro:0,ba:30,bo:6,bs:20,no:2,ol:0,ko:0,db:0,bw:0,ml:0,tg:6173},
+{po:'PO-01',bl:'jan',v:'YOGA',k:'YG0107JANUARI2026',p:2536,r:1,mat:1,pro:0,ba:1,bo:0,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:2592},
+{po:'PO-01',bl:'jan',v:'BAYU',k:'BY0107JANUARI2026 REGULER',p:1714,r:26,mat:17,pro:9,ba:16,bo:0,bs:0,no:1,ol:0,ko:6,db:3,bw:0,ml:0,tg:1780},
+{po:'PO-01',bl:'jan',v:'BAYU',k:'BY0131DESEMBER25 KID',p:2325,r:23,mat:19,pro:4,ba:3,bo:5,bs:0,no:11,ol:0,ko:2,db:0,bw:2,ml:0,tg:2332},
+{po:'PO-01',bl:'jan',v:'CECEP',k:'CC0107JANUARI2026',p:5213,r:3,mat:3,pro:0,ba:0,bo:3,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:5245},
+{po:'PO-02',bl:'jan',v:'MKS',k:'MKS0219JANUARI2026',p:4106,r:81,mat:70,pro:11,ba:26,bo:2,bs:0,no:42,ol:0,ko:0,db:0,bw:0,ml:11,tg:4230},
+{po:'PO-02',bl:'jan',v:'YOGI',k:'GI0214JANUARI2026-01',p:3984,r:22,mat:16,pro:6,ba:8,bo:4,bs:4,no:0,ol:6,ko:0,db:0,bw:0,ml:0,tg:4000},
+{po:'PO-02',bl:'jan',v:'YOGI',k:'GI0214JANUARI2026-02',p:5487,r:51,mat:50,pro:1,ba:14,bo:11,bs:23,no:2,ol:1,ko:0,db:0,bw:0,ml:0,tg:5568},
+{po:'PO-02',bl:'jan',v:'YOGI',k:'GI0214JANUARI2026-02 RIB',p:400,r:3,mat:3,pro:0,ba:0,bo:0,bs:1,no:2,ol:0,ko:0,db:0,bw:0,ml:0,tg:400},
+{po:'PO-02',bl:'jan',v:'YOGA',k:'YG0214JANUARI2026',p:2424,r:10,mat:10,pro:0,ba:10,bo:0,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:2351},
+{po:'PO-02',bl:'jan',v:'BAYU',k:'BY0214JANUARI2026 REGULER',p:5153,r:28,mat:21,pro:7,ba:2,bo:19,bs:0,no:0,ol:0,ko:4,db:0,bw:3,ml:0,tg:5340},
+{po:'PO-02',bl:'jan',v:'BAYU',k:'BY0214JANUARI2026 TUNIK',p:206,r:0,mat:0,pro:0,ba:0,bo:0,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:210},
+{po:'PO-02',bl:'jan',v:'BAYU',k:'BY0214JANUARI2026 KID',p:1921,r:16,mat:14,pro:2,ba:0,bo:11,bs:0,no:3,ol:0,ko:0,db:0,bw:2,ml:0,tg:2006},
+{po:'PO-02',bl:'jan',v:'KOKO',k:'KK0214JANUARI2026',p:5222,r:36,mat:15,pro:21,ba:0,bo:8,bs:0,no:7,ol:0,ko:21,db:0,bw:0,ml:0,tg:5280},
+{po:'PO-02',bl:'jan',v:'KOKO',k:'KK0214JANUARI2026 KID',p:383,r:3,mat:3,pro:0,ba:0,bo:0,bs:0,no:3,ol:0,ko:0,db:0,bw:0,ml:0,tg:385},
+{po:'PO-03',bl:'jan',v:'MKS',k:'MKS0326JANUARI2026',p:4720,r:65,mat:8,pro:57,ba:6,bo:2,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:57,tg:4900},
+{po:'PO-03',bl:'jan',v:'YOGI',k:'GI0321JANUARI2026-01',p:5076,r:32,mat:32,pro:0,ba:7,bo:7,bs:9,no:9,ol:0,ko:0,db:0,bw:0,ml:0,tg:5122},
+{po:'PO-03',bl:'jan',v:'YOGI',k:'GI0321JANUARI2026-02',p:7106,r:89,mat:83,pro:6,ba:31,bo:27,bs:18,no:7,ol:6,ko:0,db:0,bw:0,ml:0,tg:7200},
+{po:'PO-03',bl:'jan',v:'YOGA',k:'YG0321JANUARI2026',p:2458,r:12,mat:12,pro:0,ba:12,bo:0,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:2406},
+{po:'PO-03',bl:'jan',v:'BAYU',k:'BY0321JANUARI2026',p:5828,r:47,mat:14,pro:33,ba:0,bo:14,bs:0,no:0,ol:0,ko:28,db:5,bw:0,ml:0,tg:5899},
+{po:'PO-03',bl:'jan',v:'CECEP',k:'CC0321JANUARI2026',p:4090,r:7,mat:5,pro:2,ba:4,bo:0,bs:0,no:1,ol:0,ko:0,db:0,bw:2,ml:0,tg:5191},
+{po:'PO-03',bl:'jan',v:'KOKO',k:'KK0321JANUARI2026 REG',p:2687,r:8,mat:8,pro:0,ba:6,bo:0,bs:0,no:2,ol:0,ko:0,db:0,bw:0,ml:0,tg:2690},
+{po:'PO-03',bl:'jan',v:'KOKO',k:'KK0321JANUARI2026 KID',p:2575,r:20,mat:20,pro:0,ba:7,bo:0,bs:0,no:13,ol:0,ko:0,db:0,bw:0,ml:0,tg:2487},
+{po:'PO-04',bl:'jan',v:'MKS',k:'MKS0402FEBRUARI2026',p:5450,r:50,mat:39,pro:11,ba:26,bo:2,bs:0,no:11,ol:0,ko:0,db:0,bw:0,ml:11,tg:5764},
+{po:'PO-04',bl:'jan',v:'YOGI',k:'GI0428JANUARI2026-01',p:3647,r:27,mat:27,pro:0,ba:8,bo:3,bs:5,no:11,ol:0,ko:0,db:0,bw:0,ml:0,tg:3658},
+{po:'PO-04',bl:'jan',v:'YOGI',k:'GI0428JANUARI2026-02',p:5310,r:45,mat:45,pro:0,ba:17,bo:13,bs:13,no:2,ol:0,ko:0,db:0,bw:0,ml:0,tg:5396},
+{po:'PO-04',bl:'jan',v:'YOGI',k:'GI0428JANUARI2026-02 RIB',p:381,r:3,mat:3,pro:0,ba:1,bo:0,bs:2,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:388},
+{po:'PO-04',bl:'jan',v:'YOGA',k:'YG0428JANUARI2026',p:2441,r:0,mat:0,pro:0,ba:0,bo:0,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:2448},
+{po:'PO-04',bl:'jan',v:'BAYU',k:'BY0428JANUARI2026',p:10568,r:82,mat:45,pro:37,ba:0,bo:22,bs:0,no:23,ol:5,ko:26,db:6,bw:0,ml:0,tg:10848},
+{po:'PO-04',bl:'jan',v:'BAYU',k:'BY0428JANUARI2026 TUNIK',p:127,r:11,mat:11,pro:0,ba:0,bo:0,bs:11,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:135},
+{po:'PO-04',bl:'jan',v:'KOKO',k:'KK0428JANUARI2026 KID',p:3584,r:22,mat:22,pro:0,ba:0,bo:9,bs:0,no:13,ol:0,ko:0,db:0,bw:0,ml:0,tg:3486},
+{po:'PO-05',bl:'feb',v:'MKS',k:'MKS0509FEBRUARI2026',p:5170,r:2,mat:2,pro:0,ba:2,bo:0,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:5444},
+{po:'PO-05',bl:'feb',v:'YOGI',k:'GI0504FEBRUARI2026-01',p:7609,r:54,mat:48,pro:6,ba:11,bo:14,bs:23,no:0,ol:6,ko:0,db:0,bw:0,ml:0,tg:7705},
+{po:'PO-05',bl:'feb',v:'YOGI',k:'GI0504FEBRUARI2026-02',p:7124,r:72,mat:67,pro:5,ba:19,bo:28,bs:16,no:4,ol:5,ko:0,db:0,bw:0,ml:0,tg:7277},
+{po:'PO-05',bl:'feb',v:'YOGI',k:'GI0504FEBRUARI2026-02 RIB',p:755,r:5,mat:4,pro:1,ba:0,bo:2,bs:2,no:0,ol:1,ko:0,db:0,bw:0,ml:0,tg:764},
+{po:'PO-05',bl:'feb',v:'BAYU',k:'BY0504FEBRUARI2026 REG',p:13776,r:46,mat:38,pro:8,ba:3,bo:16,bs:0,no:19,ol:0,ko:0,db:0,bw:8,ml:0,tg:15136},
+{po:'PO-05',bl:'feb',v:'BAYU',k:'BY0504FEBRUARI2026 TUNIK',p:262,r:7,mat:0,pro:7,ba:0,bo:0,bs:0,no:0,ol:0,ko:7,db:0,bw:0,ml:0,tg:266},
+{po:'PO-05',bl:'feb',v:'CECEP',k:'CC0504FEBRUARI2026',p:5119,r:1,mat:1,pro:0,ba:0,bo:0,bs:1,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:5406},
+{po:'PO-05',bl:'feb',v:'KOKO',k:'KK0504FEBRUARI2026 REG',p:1232,r:13,mat:13,pro:0,ba:13,bo:0,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:1236},
+{po:'PO-05',bl:'feb',v:'KOKO',k:'KK0504FEBRUARI2026 KID',p:1959,r:9,mat:8,pro:1,ba:0,bo:3,bs:0,no:5,ol:0,ko:0,db:0,bw:0,ml:1,tg:1972},
+{po:'PO-06',bl:'feb',v:'MKS',k:'MKS0616FEBRUARI2026',p:4833,r:32,mat:22,pro:10,ba:11,bo:4,bs:0,no:7,ol:0,ko:0,db:0,bw:0,ml:10,tg:5004},
+{po:'PO-06',bl:'feb',v:'YOGI',k:'GI0611FEBRUARI2026-01',p:4961,r:23,mat:18,pro:5,ba:10,bo:0,bs:6,no:2,ol:5,ko:0,db:0,bw:0,ml:0,tg:5028},
+{po:'PO-06',bl:'feb',v:'YOGI',k:'GI0611FEBRUARI2026-02',p:6699,r:108,mat:97,pro:11,ba:30,bo:20,bs:36,no:11,ol:11,ko:0,db:0,bw:0,ml:0,tg:6819},
+{po:'PO-06',bl:'feb',v:'YOGI',k:'GI0611FEBRUARI2026-02 RIB',p:200,r:0,mat:0,pro:0,ba:0,bo:0,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:200},
+{po:'PO-06',bl:'feb',v:'BAYU',k:'BY0611FEBRUARI2026',p:12479,r:51,mat:41,pro:10,ba:3,bo:32,bs:0,no:6,ol:0,ko:0,db:4,bw:0,ml:6,tg:12780},
+{po:'PO-06',bl:'feb',v:'CECEP',k:'CC0611FEBRUARI2026',p:5130,r:0,mat:0,pro:0,ba:0,bo:0,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:5160},
+{po:'PO-06',bl:'feb',v:'KOKO',k:'KK0611FEBRUARI2026 KID',p:619,r:0,mat:0,pro:0,ba:0,bo:0,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:596},
+{po:'PO-06',bl:'feb',v:'KOKO',k:'KK0611FEBRUARI2026 REG',p:4475,r:26,mat:26,pro:0,ba:12,bo:0,bs:0,no:14,ol:0,ko:0,db:0,bw:0,ml:0,tg:4500},
+{po:'PO-07',bl:'feb',v:'MKS',k:'MKS0723FEBRUARI2026',p:4862,r:0,mat:0,pro:0,ba:0,bo:0,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:4960},
+{po:'PO-07',bl:'feb',v:'YOGI',k:'GI0718FEBRUARI2026-01',p:5750,r:26,mat:26,pro:0,ba:5,bo:10,bs:11,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:5790},
+{po:'PO-07',bl:'feb',v:'YOGI',k:'GI0718FEBRUARI2026-02',p:6602,r:83,mat:80,pro:3,ba:17,bo:23,bs:31,no:9,ol:3,ko:0,db:0,bw:0,ml:0,tg:6687},
+{po:'PO-07',bl:'feb',v:'YOGI',k:'GI0718FEBRUARI2026-02 RIB',p:1329,r:5,mat:4,pro:1,ba:2,bo:2,bs:0,no:0,ol:1,ko:0,db:0,bw:0,ml:0,tg:1336},
+{po:'PO-07',bl:'feb',v:'CECEP',k:'CC0718FEBRUARI2026',p:5170,r:17,mat:8,pro:9,ba:8,bo:0,bs:0,no:0,ol:0,ko:0,db:0,bw:9,ml:0,tg:5220},
+{po:'PO-07',bl:'feb',v:'KOKO',k:'KK0718FEBRUARI2026 REG',p:1991,r:1,mat:1,pro:0,ba:1,bo:0,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:2000},
+{po:'PO-07',bl:'feb',v:'KOKO',k:'KK0718FEBRUARI2026 KID',p:774,r:2,mat:2,pro:0,ba:2,bo:0,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:792},
+{po:'PO-08',bl:'feb',v:'MKS',k:'MKS0802MARET20262026',p:5291,r:0,mat:0,pro:0,ba:0,bo:0,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:5416},
+{po:'PO-08',bl:'feb',v:'YOGI',k:'GI0825FEBRUARI2026-01',p:7054,r:54,mat:51,pro:3,ba:19,bo:5,bs:13,no:14,ol:3,ko:0,db:0,bw:0,ml:0,tg:7142},
+{po:'PO-08',bl:'feb',v:'YOGI',k:'GI0825FEBRUARI2026-02',p:11046,r:77,mat:77,pro:0,ba:23,bo:19,bs:24,no:11,ol:0,ko:0,db:0,bw:0,ml:0,tg:11088},
+{po:'PO-08',bl:'feb',v:'CECEP',k:'CC0825FEBRUARI2026',p:6162,r:11,mat:11,pro:0,ba:11,bo:0,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:6168},
+{po:'PO-08',bl:'feb',v:'KOKO',k:'KK0825FEBRUARI2026',p:6323,r:14,mat:14,pro:0,ba:0,bo:10,bs:0,no:4,ol:0,ko:0,db:0,bw:0,ml:0,tg:6452},
+{po:'PO-08',bl:'feb',v:'KOKO',k:'KK0825FEBRUARI2026 KID',p:1230,r:3,mat:3,pro:0,ba:3,bo:0,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:1192},
+{po:'PO-09',bl:'mar',v:'YOGI',k:'GI0904MARET2026-01',p:7715,r:47,mat:44,pro:3,ba:21,bo:3,bs:5,no:15,ol:3,ko:0,db:0,bw:0,ml:0,tg:7856},
+{po:'PO-09',bl:'mar',v:'YOGI',k:'GI0904MARET2026-02',p:8430,r:95,mat:95,pro:0,ba:29,bo:33,bs:33,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:8590},
+{po:'PO-09',bl:'mar',v:'BAYU',k:'BY0904MARET2026',p:2718,r:9,mat:5,pro:4,ba:0,bo:5,bs:0,no:0,ol:0,ko:1,db:3,bw:0,ml:0,tg:2800},
+{po:'PO-09',bl:'mar',v:'KOKO',k:'KK0904MARET2026 REG',p:3458,r:8,mat:8,pro:0,ba:8,bo:0,bs:0,no:0,ol:0,ko:0,db:0,bw:0,ml:0,tg:3435},
+];
 
-// URL Google Sheets Anda sudah terpasang di sini
+// ════════════════════════════════════════
+// KONFIGURASI — URL GOOGLE SHEETS CSV ANDA
+// Ganti URL ini atau isi via tab ⚙️ Setup
+// ════════════════════════════════════════
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSzmUH31FkNix6trVLYqz-HMjqsalH5Wp4MNED0HYS0fWJbpFhuydoY88yx-eFV1wre-KQ4kW6lNzsf/pub?gid=1221750302&single=true&output=csv';
 
-// ════════════════════════════════════════════════════════════════
-//  STATE GLOBAL
-// ════════════════════════════════════════════════════════════════
-let ORDERS = [];
-let curMonth = 'all';
-let curWeek  = null;
 let sheetUrl = localStorage.getItem('sheetUrl') || DEFAULT_SHEET_URL;
+let DATA_LOADED = false;
 
-// ════════════════════════════════════════════════════════════════
-//  UTILS
-// ════════════════════════════════════════════════════════════════
-const CH = {};
-function mk(id, cfg) {
-  if (CH[id]) CH[id].destroy();
-  const el = document.getElementById(id);
-  if (!el) return;
-  CH[id] = new Chart(el, cfg);
-}
-const MAT = o => (o.ba||0)+(o.bo||0)+(o.bs||0)+(o.no||0);
-const PRO = o => (o.ol||0)+(o.ko||0)+(o.db||0)+(o.bw||0)+(o.ml||0);
-const rc = r => r > 1 ? '#dc2626' : r > 0.7 ? '#d97706' : '#16a34a';
-// Format rate: selalu tampilkan setidaknya 2 desimal, tambah presisi jika nilai sangat kecil
-function fmtRate(r) {
-  if (r === 0) return '0,00%';
-  if (r >= 1)   return r.toFixed(2)+'%';
-  if (r >= 0.1) return r.toFixed(3)+'%';
-  if (r >= 0.01)return r.toFixed(4)+'%';
-  return r.toFixed(5)+'%'; // sangat kecil, tampilkan 5 desimal
-}
-const nf = n => Number(n||0).toLocaleString('id');
-function pill(r) {
-  if (r > 1)    return `<span class="pill p-red">Kritis</span>`;
-  if (r > 0.7)  return `<span class="pill p-amb">Waspada</span>`;
-  if (r < 0.15) return `<span class="pill p-top">Excellent</span>`;
-  return `<span class="pill p-grn">Normal</span>`;
-}
-function bbul(b) {
-  return b==='jan' ? `<span class="b-jan">JAN</span>`
-       : b==='feb' ? `<span class="b-feb">FEB</span>`
-       : `<span class="b-mar">MAR</span>`;
-}
-function vbars(arr, elId) {
-  const mx = Math.max(...arr.map(v=>v.r), 0.01);
-  document.getElementById(elId).innerHTML = [...arr].sort((a,b)=>b.r-a.r).map(v => {
-    const w = Math.round(v.r/mx*100);
-    return `<div class="br"><span class="br-n">${v.v}</span><div class="br-t"><div class="br-f" style="width:${w}%;background:${rc(v.r)}"></div></div><span class="br-v" style="color:${rc(v.r)}">${v.r.toFixed(2)}%</span></div>`;
-  }).join('');
-}
-function cOpts(ymx=1.2) {
-  return {
-    responsive:true, maintainAspectRatio:false,
-    plugins:{legend:{display:false}},
-    scales:{
-      x:{ticks:{font:{size:10,family:'DM Sans'},color:'#9ca3af'},grid:{display:false},border:{display:false}},
-      y:{min:0,max:ymx,ticks:{font:{size:9},color:'#9ca3af',callback:v=>v<0.1?v.toFixed(3)+'%':v.toFixed(2)+'%'},grid:{color:'rgba(0,0,0,.04)'},border:{display:false}}
-    }
+// ── Parser CSV robust (handle multiline quoted fields & header detection)
+function parseCSVRobust(text){
+  text = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  const rows=[]; let cur='',inQ=false,row=[];
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(ch==='"'){if(inQ&&text[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+    else if(ch===','&&!inQ){row.push(cur.trim());cur='';}
+    else if(ch==='\n'&&!inQ){row.push(cur.trim());if(row.some(c=>c))rows.push(row);row=[];cur='';}
+    else cur+=ch;
+  }
+  if(cur.trim()||row.length){row.push(cur.trim());rows.push(row);}
+  if(rows.length<2)return[];
+
+  // Cari header row
+  let hi=0;
+  for(let i=0;i<Math.min(5,rows.length);i++){
+    const j=rows[i].join(' ').toLowerCase();
+    if(j.includes('vendor')||j.includes('produksi')||j.includes('kode produksi')){hi=i;break;}
+  }
+  const hdr=rows[hi].map(h=>h.toLowerCase().replace(/\s+/g,' ').trim());
+  const fi=(...tests)=>{for(const t of tests){const idx=hdr.findIndex(h=>t instanceof RegExp?t.test(h):h.includes(t));if(idx>=0)return idx;}return -1;};
+  const ci={
+    po:fi('po - ',/^po$/),bl:fi('bulan','month'),v:fi('vendor'),k:fi('kode produksi','kode','code'),
+    p:fi('total produksi',/^produksi$/),r:fi('total reject',/^reject$/),
+    ba:fi('reject bahan',/^bahan$/),bo:fi('reject bolong',/^bolong$/),
+    bs:fi('reject bs',/^bs$/),no:fi('reject noda',/^noda$/),
+    ol:fi('reject oli',/^oli$/),db:fi('double benang','dbl'),
+    ko:fi('reject kotor',/^kotor$/),bw:fi('reject bowing',/^bowing$/),
+    ml:fi('reject melintir',/^melintir$/),
+    mat:fi('reject material',/^material$/),pro:fi('reject proses',/^proses$/),
+    tg:fi('target cutting','target'),
   };
+  // Fallback posisi default kolom Excel
+  const def={po:0,bl:2,v:20,k:4,p:17,r:15,ba:6,bo:7,bs:8,no:9,ol:10,db:11,ko:12,bw:13,ml:14,mat:21,pro:22,tg:16};
+  Object.keys(def).forEach(key=>{if(ci[key]<0)ci[key]=def[key];});
+
+  const data=[];
+  for(const row of rows.slice(hi+1)){
+    if(!row.length||row.every(c=>!c))continue;
+    const g=i=>parseFloat((row[i]||'').replace(/,/g,'').replace(/\s/g,''))||0;
+    const s=i=>(row[i]||'').trim();
+    const poRaw=s(ci.po),vRaw=s(ci.v),kRaw=s(ci.k);
+    if(!kRaw&&!poRaw)continue;
+    if(vRaw.toLowerCase().includes('all vendor'))continue;
+    if(kRaw.toUpperCase().includes('TOTAL')&&/PO/i.test(kRaw))continue;
+    if(kRaw.toLowerCase()==='kode produksi')continue;
+    const p=g(ci.p),r=g(ci.r),ba=g(ci.ba),bo=g(ci.bo),bs=g(ci.bs),no=g(ci.no);
+    const ol=g(ci.ol),db=g(ci.db),ko=g(ci.ko),bw=g(ci.bw),ml=g(ci.ml),tg=g(ci.tg);
+    // Noda = Material
+    const mat=(ci.mat>=0&&g(ci.mat)>0)?g(ci.mat):ba+bo+bs+no;
+    const pro=(ci.pro>=0&&g(ci.pro)>0)?g(ci.pro):ol+db+ko+bw+ml;
+    // Deteksi bulan
+    let bl='';
+    const bt=s(ci.bl).toLowerCase();
+    if(bt.includes('jan'))bl='jan';else if(bt.includes('feb'))bl='feb';
+    else if(bt.includes('mar')||bt.includes('maret'))bl='mar';
+    else if(bt.includes('apr'))bl='apr';
+    else if(bt.includes('mei')||bt.includes('may'))bl='mei';
+    if(!bl){const mn=bt.match(/(\d{4})-(\d{2})-\d{2}/);if(mn){const M={1:'jan',2:'feb',3:'mar',4:'apr',5:'mei',6:'jun',7:'jul',8:'agu',9:'sep',10:'okt',11:'nov',12:'des'};bl=M[parseInt(mn[2])]||'jan';}}
+    if(!bl){const ku=kRaw.toUpperCase();if(ku.includes('JANUARI'))bl='jan';else if(ku.includes('FEBRUARI'))bl='feb';else if(ku.includes('MARET'))bl='mar';else if(ku.includes('APRIL'))bl='apr';}
+    if(!bl)bl='jan';
+    data.push({po:poRaw,bl,v:vRaw,k:kRaw,p,r,mat,pro,ba,bo,bs,no,ol,db,ko,bw,ml,target:tg});
+  }
+  return data;
 }
-function goP(id, btn) {
+
+// ── CORS Proxy fallback
+async function fetchCSV(url){
+  try{const res=await fetch(url,{cache:'no-store',mode:'cors'});if(res.ok)return await res.text();}catch(e){}
+  try{const res=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,{cache:'no-store'});if(res.ok){const j=await res.json();if(j.contents)return j.contents;}}catch(e){}
+  try{const res=await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`,{cache:'no-store'});if(res.ok)return await res.text();}catch(e){}
+  throw new Error('Tidak bisa mengambil data. Deploy ke GitHub Pages atau cek URL Google Sheets.');
+}
+
+// ── LOAD DATA DARI GOOGLE SHEETS
+async function loadData(){
+  if(!sheetUrl){
+    document.getElementById('loading').style.opacity='0';setTimeout(()=>document.getElementById('loading').style.display='none',350);
+    setSyncStatus('err','⚙️ Belum ada URL — buka tab Setup');
+    showSetupGuide();return;
+  }
+  document.getElementById('loading').style.display='flex';document.getElementById('loading').style.opacity='1';
+  document.getElementById('loading-sub').textContent='Mengambil: '+sheetUrl.slice(0,55)+'...';
+  setSyncStatus('loading','🔄 Memuat dari Google Sheets...');
+  try{
+    let url=sheetUrl.trim();
+    if(!url.includes('output=csv')&&!url.includes('format=csv'))url+=(url.includes('?')?'&':'?')+'output=csv';
+    const text=await fetchCSV(url);
+    if(!text||text.trim().length<10)throw new Error('Data kosong');
+    if(text.trim().startsWith('<'))throw new Error('URL mengembalikan HTML bukan CSV — pastikan sudah publish sebagai CSV');
+    const parsed=parseCSVRobust(text);
+    if(parsed.length===0){const prev=text.split('\n').slice(0,3).join(' | ');throw new Error('0 baris terbaca. Preview: '+prev.slice(0,200));}
+    // Update data global
+    D.length=0;parsed.forEach(x=>D.push(x));
+    DATA_LOADED=true;
+    document.getElementById('loading').style.opacity='0';setTimeout(()=>document.getElementById('loading').style.display='none',350);
+    document.getElementById('error-banner').style.display='none';
+    const now=new Date().toLocaleString('id-ID');
+    setSyncStatus('ok',`✅ ${D.length} order berhasil dimuat dari Google Sheets`,'Update: '+now);
+    document.querySelector('.hdr-sub').textContent='Live · Google Sheets · '+D.length+' order · '+[...new Set(D.map(o=>o.po))].filter(po=>D.filter(o=>o.po===po).some(o=>o.p>0)).length+' PO aktif';
+    renderAll();
+  }catch(err){
+    document.getElementById('loading').style.opacity='0';setTimeout(()=>document.getElementById('loading').style.display='none',350);
+    document.getElementById('error-banner').style.display='block';
+    document.getElementById('error-msg').innerHTML='<strong>Error:</strong> '+err.message+'<br><small>Cek tab ⚙️ Setup · Pastikan Google Sheets sudah di-publish sebagai CSV publik</small>';
+    setSyncStatus('err','❌ Gagal memuat data — lihat error banner di atas');
+    // Fallback ke data hardcode jika sudah pernah dimuat
+    if(!DATA_LOADED){document.getElementById('loading').style.display='none';renderAll();}
+  }
+}
+
+function setSyncStatus(type,msg,time=''){
+  const bar=document.getElementById('sync-bar');
+  const colors={loading:'#eff6ff',ok:'#ecfdf5',err:'#fef2f2'};
+  const borders={loading:'#bfdbfe',ok:'#a7f3d0',err:'#fca5a5'};
+  bar.style.background=colors[type]||colors.loading;
+  bar.style.borderBottomColor=borders[type]||borders.loading;
+  document.getElementById('sync-msg').textContent=msg;
+  document.getElementById('sync-time').textContent=time;
+}
+
+function showSetupGuide(){if(sheetUrl)document.getElementById('sheet-url-input').value=sheetUrl;}
+
+function saveAndLoad(){
+  const url=document.getElementById('sheet-url-input').value.trim();
+  if(!url){alert('URL tidak boleh kosong!');return;}
+  sheetUrl=url;localStorage.setItem('sheetUrl',url);
+  document.getElementById('setup-status').textContent='✅ URL disimpan. Memuat data...';
+  loadData();
+}
+
+function renderAll(){initOV();initBM();initPO();initVN();initCC();initDT();}
+
+// ── Auto refresh setiap 5 menit
+setInterval(()=>{if(sheetUrl)loadData();},5*60*1000);
+
+// ── KONSTANTA ──
+const BL_COLOR={jan:'#1a56db',feb:'#b45309',mar:'#047857',apr:'#7c3aed'};
+const BL_LIGHT={jan:'rgba(26,86,219,.07)',feb:'rgba(180,83,9,.07)',mar:'rgba(4,120,87,.09)',apr:'rgba(124,58,237,.07)'};
+const BL_NAME={jan:'Januari',feb:'Februari',mar:'Maret',apr:'April'};
+const TYPE_LABELS=['Bahan','Bolong','Noda★','BS','Kotor','Melintir','Oli','Bowing','Dbl Bng'];
+const TYPE_COLORS=['#1d4ed8','#2563eb','#3b82f6','#60a5fa','#d97706','#f59e0b','#f97316','#ea580c','#92400e'];
+const PIE_C=['#1a56db','#b45309','#7c3aed','#047857','#0891b2','#e11d48','#84cc16','#f97316'];
+
+// ── UTILS ──
+const CH={};
+function mk(id,cfg){if(CH[id])CH[id].destroy();const e=document.getElementById(id);if(!e)return;CH[id]=new Chart(e,cfg)}
+const nf=n=>Number(n||0).toLocaleString('id');
+const rc=r=>r>1?'#dc2626':r>0.7?'#d97706':'#16a34a';
+function fmtR(r){
+  if(!r||r===0)return'0,00%';
+  // Selalu 2 desimal, tapi tampilkan sampai 4 jika < 0.01%
+  if(r<0.01)return r.toFixed(4)+'%';
+  return r.toFixed(2)+'%';
+}
+function pill(r){
+  if(r>1)return`<span class="pill p-red">Kritis</span>`;
+  if(r>0.7)return`<span class="pill p-amb">Waspada</span>`;
+  if(r<0.15)return`<span class="pill p-top">Excellent</span>`;
+  return`<span class="pill p-grn">Normal</span>`;
+}
+function blbadge(b){
+  const m={jan:'bj',feb:'bf',mar:'bm',apr:'ba'};
+  const n={jan:'JAN',feb:'FEB',mar:'MAR',apr:'APR'};
+  return`<span class="${m[b]||'bj'}">${n[b]||b.toUpperCase()}</span>`;
+}
+function vbars(arr,el){
+  const mx=Math.max(...arr.map(v=>v.r),.01);
+  document.getElementById(el).innerHTML=[...arr].sort((a,b)=>b.r-a.r).map(v=>{
+    const w=Math.round(v.r/mx*100);
+    return`<div class="brow"><span class="brow-n">${v.v}</span><div class="brow-t"><div class="brow-f" style="width:${w}%;background:${rc(v.r)}"></div></div><span class="brow-v" style="color:${rc(v.r)}">${fmtR(v.r)}</span></div>`;
+  }).join('')
+}
+function cOpts(ymx=1.2){
+  return{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{
+      x:{ticks:{font:{size:10,family:'Plus Jakarta Sans'},color:'#94a3b8'},grid:{display:false},border:{display:false}},
+      y:{min:0,max:ymx,ticks:{font:{size:9},color:'#94a3b8',callback:v=>fmtR(v)},grid:{color:'rgba(0,0,0,.03)'},border:{display:false}}
+    }
+  }
+}
+function goP(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nt').forEach(t=>t.classList.remove('on'));
   document.getElementById('page-'+id).classList.add('on');
@@ -692,777 +876,381 @@ function goP(id, btn) {
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-// ════════════════════════════════════════════════════════════════
-//  PARSE CSV DARI GOOGLE SHEETS
-// ════════════════════════════════════════════════════════════════
-// ── Parser satu baris CSV (handle quotes + koma di dalam field)
-// ══ Parser CSV yang handle multiline quoted fields (newline di dalam "...")
-function parseCSVRobust(text) {
-  // Normalize CRLF
-  text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
-  // Tokenize seluruh CSV dengan benar (handle newline di dalam quotes)
-  const rows = [];
-  let cur = '', inQ = false, row = [];
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (ch === '"') {
-      if (inQ && text[i+1] === '"') { cur += '"'; i++; }  // escaped quote
-      else inQ = !inQ;
-    } else if (ch === ',' && !inQ) {
-      row.push(cur.trim()); cur = '';
-    } else if (ch === '\n' && !inQ) {
-      row.push(cur.trim()); rows.push(row); row = []; cur = '';
-    } else {
-      cur += ch;
-    }
-  }
-  if (cur.trim() || row.length) { row.push(cur.trim()); rows.push(row); }
-
-  if (rows.length < 2) return [];
-
-  // Cari baris header — baris pertama yang ada 'vendor' atau 'produksi'
-  let hi = 0;
-  for (let i = 0; i < Math.min(5, rows.length); i++) {
-    const joined = rows[i].join(' ').toLowerCase();
-    if (joined.includes('vendor') || joined.includes('produksi') || joined.includes('kode produksi')) {
-      hi = i; break;
-    }
-  }
-
-  // Normalize header: lowercase, strip whitespace & newline
-  const hdr = rows[hi].map(h => h.toLowerCase().replace(/\s+/g,' ').trim());
-
-  // Cari index kolom dari header — robust matching
-  const fi = (...tests) => {
-    for (const t of tests) {
-      const idx = hdr.findIndex(h => t instanceof RegExp ? t.test(h) : h.includes(t));
-      if (idx >= 0) return idx;
-    }
-    return -1;
-  };
-
-  const ci = {
-    po:  fi('po - ', /^po$/),
-    bl:  fi('bulan', 'month'),
-    v:   fi('vendor'),
-    k:   fi('kode produksi', 'kode', 'code'),
-    p:   fi('total produksi', /^produksi$/),
-    r:   fi('total reject', /^reject$/),
-    ba:  fi('reject bahan', /^bahan$/),
-    bo:  fi('reject bolong', /^bolong$/),
-    bs:  fi('reject bs', /^bs$/),
-    no:  fi('reject noda', /^noda$/),
-    ol:  fi('reject oli', /^oli$/),
-    db:  fi('double benang', 'dbl', 'double'),
-    ko:  fi('reject kotor', /^kotor$/),
-    bw:  fi('reject bowing', /^bowing$/),
-    ml:  fi('reject melintir', /^melintir$/),
-    mat: fi('reject material', /^material$/),
-    pro: fi('reject proses', /^proses$/),
-    tg:  fi('target cutting', 'target'),
-  };
-
-  // Fallback ke posisi default kolom jika tidak ditemukan dari header
-  // Urutan default: A=PO, B=Jadwal, C=Bulan, D=Roll, E=Kode, F=JadwalProd,
-  //                G=Bahan, H=Bolong, I=BS, J=Noda, K=Oli, L=DblBenang,
-  //                M=Kotor, N=Bowing, O=Melintir, P=TotalReject, Q=TargetCut,
-  //                R=TotalProd, S=Rate, T=Yield, U=Vendor, V=Mat, W=Proses
-  const def = {po:0, bl:2, v:20, k:4, p:17, r:15, ba:6, bo:7, bs:8,
-               no:9, ol:10, db:11, ko:12, bw:13, ml:14, mat:21, pro:22, tg:16};
-  Object.keys(def).forEach(key => { if (ci[key] < 0) ci[key] = def[key]; });
-
-  const data = [];
-  for (const row of rows.slice(hi + 1)) {
-    if (!row.length || row.every(c => !c)) continue;
-    const g = i => parseFloat((row[i]||'').replace(/,/g,'').replace(/\s/g,'')) || 0;
-    const s = i => (row[i]||'').trim();
-
-    const poRaw = s(ci.po);
-    const vRaw  = s(ci.v);
-    const kRaw  = s(ci.k);
-
-    // Skip baris kosong, subtotal, atau header duplikat
-    if (!kRaw && !poRaw) continue;
-    if (vRaw.toLowerCase().includes('all vendor')) continue;
-    if (kRaw.toUpperCase().includes('TOTAL') && /PO/i.test(kRaw)) continue;
-    if (kRaw.toLowerCase() === 'kode produksi') continue; // header duplikat
-
-    const p  = g(ci.p);
-    const r  = g(ci.r);
-    const ba = g(ci.ba), bo = g(ci.bo), bs = g(ci.bs), no = g(ci.no);
-    const ol = g(ci.ol), db = g(ci.db), ko = g(ci.ko), bw = g(ci.bw), ml = g(ci.ml);
-    const tg = g(ci.tg);
-
-    // Noda = Material (klasifikasi yang benar)
-    const matCalc = ba + bo + bs + no;
-    const proCalc = ol + db + ko + bw + ml;
-    const mat = (ci.mat >= 0 && g(ci.mat) > 0) ? g(ci.mat) : matCalc;
-    const pro = (ci.pro >= 0 && g(ci.pro) > 0) ? g(ci.pro) : proCalc;
-
-    // ── Deteksi bulan — 3 cara fallback ──
-    let bl = '';
-
-    // Cara 1: dari teks nama bulan di kolom Bulan
-    const blnTxt = s(ci.bl).toLowerCase();
-    if      (blnTxt.includes('jan'))                   bl = 'jan';
-    else if (blnTxt.includes('feb'))                   bl = 'feb';
-    else if (blnTxt.includes('mar')||blnTxt.includes('maret')) bl = 'mar';
-    else if (blnTxt.includes('apr'))                   bl = 'apr';
-    else if (blnTxt.includes('mei')||blnTxt.includes('may'))   bl = 'mei';
-    else if (blnTxt.includes('jun'))                   bl = 'jun';
-    else if (blnTxt.includes('jul'))                   bl = 'jul';
-    else if (blnTxt.includes('agu')||blnTxt.includes('aug'))   bl = 'agu';
-    else if (blnTxt.includes('sep'))                   bl = 'sep';
-    else if (blnTxt.includes('okt')||blnTxt.includes('oct'))   bl = 'okt';
-    else if (blnTxt.includes('nov'))                   bl = 'nov';
-    else if (blnTxt.includes('des')||blnTxt.includes('dec'))   bl = 'des';
-
-    // Cara 2: dari format tanggal YYYY-MM-DD di kolom Bulan
-    if (!bl) {
-      const mNum = blnTxt.match(/(\d{4})-(\d{2})-\d{2}/);
-      if (mNum) {
-        const M = {1:'jan',2:'feb',3:'mar',4:'apr',5:'mei',6:'jun',
-                   7:'jul',8:'agu',9:'sep',10:'okt',11:'nov',12:'des'};
-        bl = M[parseInt(mNum[2])] || '';
-      }
-    }
-
-    // Cara 3: dari nama bulan di Kode Produksi (misal GI0107JANUARI2026)
-    if (!bl) {
-      const kUp = kRaw.toUpperCase();
-      if      (kUp.includes('JANUARI'))  bl = 'jan';
-      else if (kUp.includes('FEBRUARI')) bl = 'feb';
-      else if (kUp.includes('MARET'))    bl = 'mar';
-      else if (kUp.includes('APRIL'))    bl = 'apr';
-      else if (kUp.includes('MEI'))      bl = 'mei';
-      else if (kUp.includes('JUNI'))     bl = 'jun';
-      else if (kUp.includes('JULI'))     bl = 'jul';
-      else if (kUp.includes('AGUSTUS'))  bl = 'agu';
-      else if (kUp.includes('SEPTEM'))   bl = 'sep';
-      else if (kUp.includes('OKTO'))     bl = 'okt';
-      else if (kUp.includes('NOVEM'))    bl = 'nov';
-      else if (kUp.includes('DESEM'))    bl = 'des';
-    }
-
-    if (!bl) bl = 'jan'; // fallback akhir
-
-    data.push({po:poRaw, bl, v:vRaw, k:kRaw, p, r, mat, pro, ba, bo, bs, no, ol, db, ko, bw, ml, target:tg});
-  }
-  return data;
+// ── STATS ──
+function gs(filter){
+  const rows=filter?D.filter(filter):D;
+  const prod=rows.reduce((s,x)=>s+x.p,0),rej=rows.reduce((s,x)=>s+x.r,0);
+  const mat=rows.reduce((s,x)=>s+x.mat,0),pro=rows.reduce((s,x)=>s+x.pro,0);
+  const ba=rows.reduce((s,x)=>s+x.ba,0),bo=rows.reduce((s,x)=>s+x.bo,0);
+  const bs=rows.reduce((s,x)=>s+x.bs,0),no=rows.reduce((s,x)=>s+x.no,0);
+  const ol=rows.reduce((s,x)=>s+x.ol,0),ko=rows.reduce((s,x)=>s+x.ko,0);
+  const db=rows.reduce((s,x)=>s+x.db,0),bw=rows.reduce((s,x)=>s+x.bw,0);
+  const ml=rows.reduce((s,x)=>s+x.ml,0);
+  return{rows,prod,rej,mat,pro,ba,bo,bs,no,ol,ko,db,bw,ml,rate:prod>0?rej/prod*100:0};
 }
-const parseCSV = parseCSVRobust; // alias
-
-// ════════════════════════════════════════════════════════════════
-//  LOAD DATA — dengan CORS proxy otomatis sebagai fallback
-// ════════════════════════════════════════════════════════════════
-async function fetchWithCORSFallback(url) {
-  // Coba langsung dulu (works di GitHub Pages)
-  try {
-    const res = await fetch(url, {cache:'no-store', mode:'cors'});
-    if (res.ok) return await res.text();
-  } catch(e) {}
-
-  // Fallback 1: allorigins proxy
-  try {
-    const proxy1 = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const res = await fetch(proxy1, {cache:'no-store'});
-    if (res.ok) {
-      const json = await res.json();
-      if (json.contents) return json.contents;
-    }
-  } catch(e) {}
-
-  // Fallback 2: corsproxy.io
-  try {
-    const proxy2 = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-    const res = await fetch(proxy2, {cache:'no-store'});
-    if (res.ok) return await res.text();
-  } catch(e) {}
-
-  throw new Error('Tidak bisa mengambil data. Coba buka dashboard di GitHub Pages, bukan file lokal.');
-}
-
-async function loadData() {
-  if (!sheetUrl) {
-    document.getElementById('loading').classList.add('hide');
-    document.getElementById('sync-msg').textContent = '⚙️ Belum ada URL — buka tab Setup';
-    document.getElementById('sync-bar').className = 'sync-bar err';
-    showSetupGuide(); return;
-  }
-
-  document.getElementById('loading').classList.remove('hide');
-  document.getElementById('loading-sub').textContent = 'Menghubungkan ke Google Sheets...';
-  document.getElementById('sync-msg').textContent = '🔄 Memuat data...';
-
-  try {
-    // Pastikan URL output CSV
-    let url = sheetUrl.trim();
-    if (!url.includes('output=csv') && !url.includes('format=csv')) {
-      url += (url.includes('?') ? '&' : '?') + 'output=csv';
-    }
-
-    document.getElementById('loading-sub').textContent = 'Mengambil CSV...';
-    const text = await fetchWithCORSFallback(url);
-
-    if (!text || text.trim().length < 10) throw new Error('Data kosong dari Google Sheets');
-    if (text.trim().startsWith('<')) throw new Error('URL mengembalikan HTML bukan CSV. Pastikan sudah di-publish sebagai CSV.');
-
-    ORDERS = parseCSV(text);
-    if (ORDERS.length === 0) {
-      // Debug: tampilkan 3 baris pertama
-      const preview = text.split('\n').slice(0,4).join(' | ');
-      throw new Error(`Data parsed 0 baris. Preview CSV: ${preview.slice(0,200)}`);
-    }
-
-    document.getElementById('loading').classList.add('hide');
-    document.getElementById('error-banner').style.display = 'none';
-    const now = new Date().toLocaleString('id-ID');
-    document.getElementById('sync-bar').className = 'sync-bar ok';
-    document.getElementById('sync-msg').textContent = `✅ ${ORDERS.length} order berhasil dimuat`;
-    document.getElementById('sync-time').textContent = 'Update: ' + now;
-    document.getElementById('hdr-src').textContent = 'Live · Google Sheets · ' + ORDERS.length + ' order';
-    renderAll();
-
-  } catch(err) {
-    document.getElementById('loading').classList.add('hide');
-    const banner = document.getElementById('error-banner');
-    banner.style.display = 'block';
-    document.getElementById('error-msg').innerHTML =
-      `<strong>Error:</strong> <code>${err.message}</code><br><br>
-      <strong>Solusi yang bisa dicoba:</strong><br>
-      1. Pastikan Google Sheets sudah di-publish: <strong>File → Share → Publish to web → CSV → Publish</strong><br>
-      2. Kalau buka dari file lokal (double-click), browser blokir CORS — <strong>upload ke GitHub Pages dulu</strong><br>
-      3. Cek tab ⚙️ Setup untuk ganti URL`;
-    document.getElementById('sync-bar').className = 'sync-bar err';
-    document.getElementById('sync-msg').textContent = '❌ Gagal memuat — lihat pesan error di atas';
-    console.error('Load error:', err);
-  }
-}
-
-function showSetupGuide() {
-  document.getElementById('setup-status').innerHTML =
-    '<span style="color:#d97706">⚠️ Belum ada URL Google Sheets. Masukkan URL di bawah untuk memulai.</span>';
-  if (sheetUrl) document.getElementById('sheet-url-input').value = sheetUrl;
-}
-
-function saveAndLoad() {
-  const url = document.getElementById('sheet-url-input').value.trim();
-  if (!url) { alert('URL tidak boleh kosong!'); return; }
-  sheetUrl = url;
-  localStorage.setItem('sheetUrl', url);
-  document.getElementById('setup-status').textContent = '✅ URL disimpan. Memuat data...';
-  loadData();
-}
-
-// ════════════════════════════════════════════════════════════════
-//  COMPUTED STATS
-// ════════════════════════════════════════════════════════════════
-function getStats(filter) {
-  const rows = filter ? ORDERS.filter(filter) : ORDERS;
-  const prod  = rows.reduce((s,x)=>s+x.p,0);
-  const rej   = rows.reduce((s,x)=>s+x.r,0);
-  const mat   = rows.reduce((s,x)=>s+x.mat,0);
-  const pro   = rows.reduce((s,x)=>s+x.pro,0);
-  const ba    = rows.reduce((s,x)=>s+x.ba,0);
-  const bo    = rows.reduce((s,x)=>s+x.bo,0);
-  const bs    = rows.reduce((s,x)=>s+x.bs,0);
-  const no    = rows.reduce((s,x)=>s+x.no,0);
-  const ol    = rows.reduce((s,x)=>s+x.ol,0);
-  const ko    = rows.reduce((s,x)=>s+x.ko,0);
-  const db    = rows.reduce((s,x)=>s+x.db,0);
-  const bw    = rows.reduce((s,x)=>s+x.bw,0);
-  const ml    = rows.reduce((s,x)=>s+x.ml,0);
-  const rate  = prod > 0 ? rej/prod*100 : 0;
-  return {rows,prod,rej,mat,pro,ba,bo,bs,no,ol,ko,db,bw,ml,rate};
-}
-
-function getPOList() {
-  const pos = [...new Set(ORDERS.map(o=>o.po))].sort();
-  return pos.map(po => {
-    const s = getStats(o=>o.po===po);
-    const sample = ORDERS.find(o=>o.po===po);
-    const bl = sample ? sample.bl : 'jan';
-    const tgt = ORDERS.filter(o=>o.po===po).reduce((s,x)=>s+x.target,0);
-    return { po, bl, ...s, target:tgt, yield_: tgt>0?s.prod/tgt*100:0 };
+function getPOs(){
+  const pos=[...new Set(D.map(o=>o.po))].sort();
+  return pos.map(po=>{
+    const s=gs(o=>o.po===po);
+    const sam=D.find(o=>o.po===po);
+    const tg=D.filter(o=>o.po===po).reduce((s,x)=>s+x.tg,0);
+    return{po,bl:sam?sam.bl:'jan',...s,target:tg,yield_:tg>0?s.prod/tg*100:0};
   });
 }
-
-function getVendorList() {
-  const vends = [...new Set(ORDERS.map(o=>o.v))].sort();
-  return vends.map(v => {
-    const s = getStats(o=>o.v===v);
-    const months = ['jan','feb','mar','apr','mei'];
-    const mRates = {};
-    months.forEach(m => {
-      const ms = getStats(o=>o.v===v&&o.bl===m);
-      mRates[m] = ms.prod>0 ? ms.rej/ms.prod*100 : 0;
-    });
-    return {v, ...s, mRates};
+function getVendors(){
+  const vs=[...new Set(D.map(o=>o.v))].sort();
+  const BLS=['jan','feb','mar'];
+  return vs.map(v=>{
+    const s=gs(o=>o.v===v);
+    const mr={};
+    BLS.forEach(b=>{const ms=gs(o=>o.v===v&&o.bl===b);mr[b]=ms.prod>0?ms.rej/ms.prod*100:0;});
+    return{v,...s,mr};
   }).sort((a,b)=>b.rate-a.rate);
 }
+const BLS=['jan','feb','mar'];
 
-function getMonths() {
-  return [...new Set(ORDERS.map(o=>o.bl))].sort();
-}
+// ═══════════════════════════════════════
+// OVERVIEW
+// ═══════════════════════════════════════
+function initOV(){
+  const all=gs(); const PL=getPOs().filter(p=>p.prod>0);
+  const bls=['jan','feb','mar'];
 
-function getPOsForMonth(m) {
-  return [...new Set(ORDERS.filter(o=>o.bl===m).map(o=>o.po))].sort();
-}
-
-// ════════════════════════════════════════════════════════════════
-//  RENDER ALL PAGES
-// ════════════════════════════════════════════════════════════════
-function renderAll() {
-  renderOverview();
-  renderBulanan();
-  renderVendor();
-  renderCacat();
-  renderDetail();
-  renderPOTabs();
-}
-
-// ── CHART COLORS per bulan
-const BL_COLORS = {jan:'#2563eb',feb:'#d97706',mar:'#059669',apr:'#7c3aed',mei:'#0891b2'};
-const BL_BGS    = {jan:'rgba(37,99,235,.07)',feb:'rgba(217,119,6,.07)',mar:'rgba(5,150,105,.1)',apr:'rgba(124,58,237,.07)',mei:'rgba(8,145,178,.07)'};
-const TYPE_LABELS = ['Bahan','Bolong','Noda★','BS','Kotor','Melintir','Oli','Bowing','Dbl Bng'];
-const TYPE_COLORS = ['#1d4ed8','#2563eb','#3b82f6','#60a5fa','#d97706','#f59e0b','#f97316','#ea580c','#78350f'];
-const PIE_COLORS  = ['#2563eb','#d97706','#7c3aed','#059669','#0891b2','#f97316','#ec4899','#84cc16'];
-
-// ── OVERVIEW
-function renderOverview() {
-  const all = getStats();
-  const months = getMonths();
-  const PO_LIST = getPOList();
-  const vendors = getVendorList();
-
-  // Header KPIs
-  document.getElementById('h-prod').textContent  = nf(all.prod);
-  document.getElementById('h-rej').textContent   = nf(all.rej);
-  document.getElementById('h-rate').textContent  = fmtRate(all.rate);
-  document.getElementById('h-period').textContent = months.map(m=>m.charAt(0).toUpperCase()+m.slice(1)).join('–')+' 2026';
-  document.getElementById('ov-src').textContent  = `Google Sheets · ${ORDERS.length} order · ${PO_LIST.length} PO · ${vendors.length} vendor`;
-
-  // KPI cards
-  document.getElementById('k-prod').textContent = nf(all.prod);
-  document.getElementById('k-prod-sub').textContent = `${PO_LIST.length} PO aktif`;
-  document.getElementById('k-rej').textContent = nf(all.rej);
-  document.getElementById('k-rej-sub').textContent = `Mat:${all.mat} · Proses:${all.pro}`;
-  document.getElementById('k-rate').textContent = fmtRate(all.rate);
-  document.getElementById('k-rate').style.color = rc(all.rate);
-  document.getElementById('k-rate-sub').textContent = all.rate < 1 ? '✓ Di bawah target 1%' : '⚠ Melebihi target';
-  document.getElementById('k-mat').textContent = nf(all.mat);
-  document.getElementById('k-mat-sub').textContent = all.rej>0 ? Math.round(all.mat/all.rej*100)+'% dari reject' : '';
-
-  // Trend chart — per PO
-  const poRates = PO_LIST.map(p=>p.rate.toFixed(4));
-  const datasets = months.map(m => ({
-    data: PO_LIST.map(p => p.bl===m ? p.rate : null),
-    borderColor: BL_COLORS[m]||'#888',
-    backgroundColor: BL_BGS[m]||'rgba(0,0,0,.05)',
-    borderWidth: 2.5, tension:.4, fill:true,
-    pointRadius: PO_LIST.map(p=>p.bl===m?6:0),
-    pointBackgroundColor: BL_COLORS[m]||'#888',
-    spanGaps:false
+  // Trend chart
+  const ds=bls.map(b=>({
+    data:PL.map(p=>p.bl===b?p.rate:null),
+    borderColor:BL_COLOR[b],backgroundColor:BL_LIGHT[b],
+    borderWidth:2.5,tension:.4,fill:true,
+    pointRadius:PL.map(p=>p.bl===b?6:0),
+    pointBackgroundColor:BL_COLOR[b],spanGaps:false
   }));
-  datasets.push({data:PO_LIST.map(()=>1),borderColor:'#dc2626',borderWidth:1.5,borderDash:[6,4],pointRadius:0,fill:false});
-  mk('ov-trend',{type:'line',data:{labels:PO_LIST.map(p=>p.po.replace('PO - ','PO-')),datasets},options:cOpts()});
+  ds.push({data:PL.map(()=>1),borderColor:'#dc2626',borderWidth:1.5,borderDash:[6,4],pointRadius:0,fill:false});
+  mk('ov-trend',{type:'line',data:{labels:PL.map(p=>p.po),datasets:ds},options:cOpts()});
 
   // Monthly bar
-  mk('ov-monthly',{type:'bar',data:{
-    labels:months.map(m=>m.charAt(0).toUpperCase()+m.slice(1)),
-    datasets:[{data:months.map(m=>getStats(o=>o.bl===m).rate.toFixed(4)),
-      backgroundColor:months.map(m=>BL_COLORS[m]||'#888'),borderRadius:7,borderSkipped:false,barThickness:32}]},
+  mk('ov-mbar',{type:'bar',data:{
+    labels:bls.map(b=>BL_NAME[b]),
+    datasets:[{data:bls.map(b=>gs(o=>o.bl===b).rate),
+      backgroundColor:bls.map(b=>BL_COLOR[b]),borderRadius:8,borderSkipped:false,barThickness:30}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{font:{size:9},color:'#9ca3af'},grid:{display:false},border:{display:false}},
-              y:{min:0,ticks:{font:{size:8},color:'#9ca3af',callback:v=>v.toFixed(2)+'%'},grid:{color:'rgba(0,0,0,.04)'},border:{display:false}}}}
+      scales:{x:{ticks:{font:{size:9},color:'#94a3b8'},grid:{display:false},border:{display:false}},
+              y:{ticks:{font:{size:8},color:'#94a3b8',callback:v=>fmtR(v)},grid:{color:'rgba(0,0,0,.03)'},border:{display:false}}}}
   });
 
   // Donut
   mk('ov-donut',{type:'doughnut',data:{
-    labels:[`Material ${all.rej>0?Math.round(all.mat/all.rej*100):0}%`,`Proses ${all.rej>0?Math.round(all.pro/all.rej*100):0}%`],
-    datasets:[{data:[all.mat,all.pro],backgroundColor:['#2563eb','#d97706'],borderWidth:0,hoverOffset:5}]},
+    labels:[`Material ${Math.round(all.mat/all.rej*100)}%`,`Proses ${Math.round(all.pro/all.rej*100)}%`],
+    datasets:[{data:[all.mat,all.pro],backgroundColor:['#1a56db','#b45309'],borderWidth:0,hoverOffset:5}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
-      plugins:{legend:{position:'right',labels:{font:{size:9},boxWidth:8,padding:5,color:'#6b7280'}}}}
+      plugins:{legend:{position:'right',labels:{font:{size:9},boxWidth:8,padding:5,color:'#64748b'}}}}
   });
 
   // Vendor bars
-  vbars(vendors.map(v=>({v:v.v,r:v.rate})),'ov-vbars');
+  vbars(getVendors().map(v=>({v:v.v,r:v.rate})),'ov-vbars');
 
   // Types bar
-  mk('ov-types',{type:'bar',data:{
-    labels:TYPE_LABELS,
-    datasets:[{data:[all.ba,all.bo,all.no,all.bs,all.ko,all.ml,all.ol,all.bw,all.db],
-      backgroundColor:TYPE_COLORS,borderWidth:0,borderRadius:5}]},
+  const ta=[all.ba,all.bo,all.no,all.bs,all.ko,all.ml,all.ol,all.bw,all.db];
+  mk('ov-types',{type:'bar',data:{labels:TYPE_LABELS,datasets:[{data:ta,backgroundColor:TYPE_COLORS,borderWidth:0,borderRadius:5}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{font:{size:9},color:'#9ca3af'},grid:{display:false},border:{display:false}},
-              y:{ticks:{font:{size:9},color:'#9ca3af'},grid:{color:'rgba(0,0,0,.04)'},border:{display:false}}}}
+      scales:{x:{ticks:{font:{size:9},color:'#94a3b8'},grid:{display:false},border:{display:false}},
+              y:{ticks:{font:{size:9},color:'#94a3b8'},grid:{color:'rgba(0,0,0,.03)'},border:{display:false}}}}
   });
 
   // PO table
-  document.getElementById('ov-tbl').innerHTML = PO_LIST.map(x=>`<tr>
-    <td style="font-weight:700">${x.po.replace('PO - ','PO-')}</td>
-    <td>${bbul(x.bl)}</td>
-    <td class="mono r">${nf(x.target)}</td>
-    <td class="mono r">${nf(x.prod)}</td>
+  document.getElementById('ov-tbl').innerHTML=getPOs().filter(p=>p.prod>0).map(x=>`<tr>
+    <td style="font-weight:700">${x.po}</td><td>${blbadge(x.bl)}</td>
+    <td class="mono r">${nf(x.target)}</td><td class="mono r">${nf(x.prod)}</td>
     <td class="mono r">${x.yield_.toFixed(2)}%</td>
     <td class="mono r">${x.rej}</td>
-    <td class="mono r" style="color:${rc(x.rate)};font-weight:700">${x.rate.toFixed(3)}%</td>
-    <td class="mono r">${x.mat}</td>
-    <td class="mono r">${x.pro}</td>
+    <td class="mono r" style="color:${rc(x.rate)};font-weight:700">${fmtR(x.rate)}</td>
+    <td class="mono r">${x.mat}</td><td class="mono r">${x.pro}</td>
     <td>${pill(x.rate)}</td>
   </tr>`).join('');
-
-  // Month pills update
-  const allS = getStats();
-  document.getElementById('mb-all-rate').textContent = fmtRate(allS.rate);
-  document.getElementById('mb-all-info').textContent = nf(allS.prod)+' unit';
-  ['jan','feb','mar','apr','mei'].forEach(m=>{
-    const ms = getStats(o=>o.bl===m);
-    const el_r = document.getElementById('mb-'+m+'-rate');
-    const el_i = document.getElementById('mb-'+m+'-info');
-    if(el_r) el_r.textContent = ms.prod>0 ? fmtRate(ms.rate) : '–';
-    if(el_i) el_i.textContent = ms.prod>0 ? nf(ms.prod)+' unit' : 'Tidak ada data';
-  });
 }
 
-// ── BULANAN
-function renderBulanan() {
-  setM('all', document.getElementById('ms-all'));
-}
+// ═══════════════════════════════════════
+// BULANAN
+// ═══════════════════════════════════════
+let curM='all';
+function initBM(){setM('all',document.getElementById('mt-all'))}
+function setM(m,el){
+  curM=m;
+  document.querySelectorAll('.mt').forEach(b=>{b.className='mt'});
+  el.classList.add(m==='all'?'on-all':'on-'+m);
 
-function setM(m, el) {
-  curMonth = m;
-  document.querySelectorAll('.mpill').forEach(s=>s.className='mpill');
-  const cls = {all:'a0',jan:'a1',feb:'a2',mar:'a3',apr:'a1',mei:'a2'};
-  el.classList.add(cls[m]||'a0');
+  const filter=m==='all'?null:o=>o.bl===m;
+  const d=gs(filter);
+  const PL=getPOs().filter(p=>m==='all'||p.bl===m).filter(p=>p.prod>0);
 
-  const filter = m==='all' ? null : o=>o.bl===m;
-  const d = getStats(filter);
-  const months = getMonths();
-
-  document.getElementById('bm-p').textContent = nf(d.prod);
-  document.getElementById('bm-ps').textContent = m==='all'?'Semua bulan':'Bulan '+m;
-  document.getElementById('bm-r').textContent = nf(d.rej);
-  document.getElementById('bm-rs').textContent = `Mat:${d.mat} · Proses:${d.pro}`;
-  document.getElementById('bm-rate').textContent = fmtRate(d.rate);
-  document.getElementById('bm-rate').style.color = rc(d.rate);
-  document.getElementById('bm-mat').textContent = nf(d.mat);
-  document.getElementById('bm-mats').textContent = d.rej>0?Math.round(d.mat/d.rej*100)+'% termasuk Noda':'–';
+  document.getElementById('bm-p').textContent=nf(d.prod);
+  document.getElementById('bm-ps').textContent=m==='all'?'Jan+Feb+Mar':BL_NAME[m]+' 2026';
+  document.getElementById('bm-r').textContent=nf(d.rej);
+  document.getElementById('bm-rs').textContent=`Mat:${d.mat} · Proses:${d.pro}`;
+  document.getElementById('bm-rate').textContent=fmtR(d.rate);
+  document.getElementById('bm-rate').style.color=rc(d.rate);
+  document.getElementById('bm-mat').textContent=nf(d.mat);
+  document.getElementById('bm-mats').textContent=d.rej>0?Math.round(d.mat/d.rej*100)+'% dari reject':'–';
 
   // Trend
-  const PO_LIST = getPOList().filter(p=>m==='all'||p.bl===m);
-  const dsMonths = m==='all' ? months : [m];
-  const datasets = dsMonths.map(bm=>({
-    data: PO_LIST.map(p=>p.bl===bm?p.rate:null),
-    borderColor:BL_COLORS[bm]||'#888',backgroundColor:BL_BGS[bm]||'rgba(0,0,0,.05)',
-    borderWidth:2.5,tension:.4,fill:true,pointRadius:6,pointBackgroundColor:BL_COLORS[bm]||'#888',spanGaps:false
+  const bls_show=m==='all'?BLS:[m];
+  const ds=bls_show.map(b=>({
+    data:PL.map(p=>p.bl===b?p.rate:null),
+    borderColor:BL_COLOR[b],backgroundColor:BL_LIGHT[b],
+    borderWidth:2.5,tension:.4,fill:true,pointRadius:6,pointBackgroundColor:BL_COLOR[b],spanGaps:false
   }));
-  datasets.push({data:PO_LIST.map(()=>1),borderColor:'#dc2626',borderWidth:1.5,borderDash:[6,4],pointRadius:0,fill:false});
-  mk('bm-trend',{type:'line',data:{labels:PO_LIST.map(p=>p.po.replace('PO - ','PO-')),datasets},options:cOpts()});
+  ds.push({data:PL.map(()=>1),borderColor:'#dc2626',borderWidth:1.5,borderDash:[6,4],pointRadius:0,fill:false});
+  mk('bm-trend',{type:'line',data:{labels:PL.map(p=>p.po),datasets:ds},options:cOpts()});
+  document.getElementById('bm-trlbl').textContent=m==='all'?'Semua PO':'PO bulan '+BL_NAME[m];
 
   // Vendor bars
-  const vendors = getVendorList();
-  const filtered = m==='all' ? vendors : vendors.filter(v=>v.mRates[m]>0).map(v=>({...v,rate:v.mRates[m]}));
-  vbars(filtered.map(v=>({v:v.v,r:v.rate})),'bm-vbars');
-  document.getElementById('bm-vl').textContent = m==='all'?'Semua bulan':'Bulan '+m;
+  const VA=getVendors();
+  vbars(m==='all'?VA.map(v=>({v:v.v,r:v.rate})):VA.filter(v=>v.mr[m]>0).map(v=>({v:v.v,r:v.mr[m]})),'bm-vbars');
+  document.getElementById('bm-vl').textContent=m==='all'?'Semua bulan':BL_NAME[m];
 
-  // Mat/Proses grouped bar
-  mk('bm-matproses',{type:'bar',data:{
-    labels:months.map(mm=>mm.charAt(0).toUpperCase()+mm.slice(1)),
+  // Mat/Proses grouped
+  mk('bm-mp',{type:'bar',data:{
+    labels:BLS.map(b=>BL_NAME[b]),
     datasets:[
-      {label:'Mat',data:months.map(mm=>getStats(o=>o.bl===mm).mat),backgroundColor:'#2563eb',borderRadius:5},
-      {label:'Proses',data:months.map(mm=>getStats(o=>o.bl===mm).pro),backgroundColor:'#d97706',borderRadius:5}
+      {label:'Mat',data:BLS.map(b=>gs(o=>o.bl===b).mat),backgroundColor:'#1a56db',borderRadius:5},
+      {label:'Proses',data:BLS.map(b=>gs(o=>o.bl===b).pro),backgroundColor:'#b45309',borderRadius:5}
     ]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{font:{size:10},color:'#9ca3af'},grid:{display:false},border:{display:false}},
-              y:{ticks:{font:{size:9},color:'#9ca3af'},grid:{color:'rgba(0,0,0,.04)'},border:{display:false}}}}
+      scales:{x:{ticks:{font:{size:10},color:'#94a3b8'},grid:{display:false},border:{display:false}},
+              y:{ticks:{font:{size:9},color:'#94a3b8'},grid:{color:'rgba(0,0,0,.03)'},border:{display:false}}}}
   });
 
   // Types per bulan
-  mk('bm-types',{type:'bar',data:{
-    labels:TYPE_LABELS,
-    datasets:months.map(mm=>({
-      label:mm.charAt(0).toUpperCase()+mm.slice(1),
-      data:[...Object.values(getStats(o=>o.bl===mm))].slice(0), // recompute
-      backgroundColor:BL_COLORS[mm]||'#888',borderRadius:4
-    })).map(ds=>{
-      const s = getStats(o=>o.bl===ds.label.toLowerCase());
-      return {...ds,data:[s.ba,s.bo,s.no,s.bs,s.ko,s.ml,s.ol,s.bw,s.db]};
-    })},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'top',labels:{font:{size:9},boxWidth:7,padding:7,color:'#9ca3af'}}},
-      scales:{x:{ticks:{font:{size:8},color:'#9ca3af'},grid:{display:false},border:{display:false}},
-              y:{ticks:{font:{size:9},color:'#9ca3af'},grid:{color:'rgba(0,0,0,.04)'},border:{display:false}}}}
+  const dsBL=BLS.map(b=>{
+    const s=gs(o=>o.bl===b);
+    return{label:BL_NAME[b],data:[s.ba,s.bo,s.no,s.bs,s.ko,s.ml,s.ol,s.bw,s.db],backgroundColor:BL_COLOR[b],borderRadius:4};
   });
+  mk('bm-types',{type:'bar',data:{labels:TYPE_LABELS,datasets:dsBL},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{font:{size:9},boxWidth:7,padding:7,color:'#94a3b8'}}},
+      scales:{x:{ticks:{font:{size:8},color:'#94a3b8'},grid:{display:false},border:{display:false}},
+              y:{ticks:{font:{size:9},color:'#94a3b8'},grid:{color:'rgba(0,0,0,.03)'},border:{display:false}}}}
+  });
+  document.getElementById('bm-typelbl').textContent='Jan · Feb · Mar 2026';
 
-  // Rows
-  const rows = ORDERS.filter(filter||(() => true));
-  const byVendorPO = rows.reduce((acc,o)=>{
-    const key = o.po+'__'+o.v;
-    if(!acc[key]) acc[key]={po:o.po,v:o.v,bl:o.bl,prod:0,rej:0,mat:0,pro:0};
-    acc[key].prod+=o.p; acc[key].rej+=o.r; acc[key].mat+=MAT(o); acc[key].pro+=PRO(o);
-    return acc;
-  },{});
-  document.getElementById('bm-tbl-lbl').textContent = m==='all'?'Semua bulan':'Bulan '+m;
-  document.getElementById('bm-rows').innerHTML = Object.values(byVendorPO).map(x=>{
-    const rt = x.prod>0?x.rej/x.prod*100:0;
-    return`<tr>
-      <td style="font-weight:700">${x.po.replace('PO - ','PO-')}</td>
-      <td style="font-weight:600">${x.v}</td>
-      <td class="mono r">${nf(x.prod)}</td>
-      <td class="mono r">${x.rej}</td>
-      <td class="mono r" style="color:${rc(rt)};font-weight:700">${rt.toFixed(3)}%</td>
-      <td class="mono r">${x.mat}</td>
-      <td class="mono r">${x.pro}</td>
-      <td>${pill(rt)}</td>
-    </tr>`;
-  }).join('');
+  // PO cards per bulan
+  const showPOs=getPOs().filter(p=>(m==='all'||p.bl===m)&&p.prod>0);
+  const pcColors={jan:'var(--jan)',feb:'var(--feb)',mar:'var(--mar)',apr:'var(--apr)'};
+  const section=document.getElementById('bm-po-section');
+  let html='<hr class="d">';
+  const groups=m==='all'?BLS:[m];
+  groups.forEach(b=>{
+    const bPOs=showPOs.filter(p=>p.bl===b);
+    if(!bPOs.length)return;
+    const bs=gs(o=>o.bl===b);
+    html+=`<div class="sdiv">${blbadge(b)}<span>${BL_NAME[b]} 2026 · ${nf(bs.prod)} prod · ${bs.rej} reject · ${fmtR(bs.rate)}</span></div>`;
+    html+=`<div class="pogrid">`;
+    bPOs.forEach(x=>{
+      html+=`<div class="poc" style="--pc:${pcColors[b]||'#1a56db'}">
+        <div class="poc-top"><span class="poc-name">${x.po}</span><span class="poc-date">${x.yield_.toFixed(2)}% yield</span></div>
+        <div class="poc-grid">
+          <div class="poc-s"><div class="poc-sl">Produksi</div><div class="poc-sv">${nf(x.prod)}</div></div>
+          <div class="poc-s"><div class="poc-sl">Reject</div><div class="poc-sv">${x.rej}</div></div>
+          <div class="poc-s"><div class="poc-sl">Rate</div><div class="poc-sv" style="color:${rc(x.rate)}">${fmtR(x.rate)}</div></div>
+        </div>
+        <div class="poc-info">Mat:${x.mat} · Proses:${x.pro}</div>
+      </div>`;
+    });
+    html+=`</div>`;
+  });
+  section.innerHTML=html;
 }
 
-// ── PO TABS (MINGGUAN)
-const WC = ['w1','w2','w3','w4','w5'];
-function renderPOTabs() {
-  const PO_LIST = getPOList().filter(p=>p.bl!=='jan');// show Feb + beyond
-  const tabs = document.getElementById('po-tabs');
-  tabs.innerHTML = PO_LIST.map((p,i)=>{
-    const cls = WC[i % WC.length];
-    const id = 'wt-'+p.po.replace(/\s/g,'_');
-    return`<div class="wtab" id="${id}" onclick="setW('${p.po}',this)">
-      <div class="wt-l">${p.po.replace('PO - ','PO-')}</div>
-      <div class="wt-r">${p.rate.toFixed(2)}%</div>
-      <div class="wt-d">${p.bl.charAt(0).toUpperCase()+p.bl.slice(1)}</div>
+// ═══════════════════════════════════════
+// PER PO
+// ═══════════════════════════════════════
+let activePO=null;
+function initPO(){
+  const PL=getPOs();
+  const BLC={jan:'var(--jan)',feb:'var(--feb)',mar:'var(--mar)',apr:'var(--apr)'};
+  const WC=['w1','w2','w3','w4','w5'];
+
+  document.getElementById('po-cards').innerHTML=PL.map((x,i)=>{
+    const isEmpty=x.prod===0;
+    return`<div class="poc" style="--pc:${BLC[x.bl]||'#1a56db'};${isEmpty?'opacity:.5':''}" onclick="showPODetail('${x.po}')">
+      <div class="poc-top">
+        <span class="poc-name" style="color:${BLC[x.bl]||'#1a56db'}">${x.po}</span>
+        <span class="poc-date">${isEmpty?'Belum Produksi':x.yield_.toFixed(2)+'% yield'}</span>
+      </div>
+      <div class="poc-grid">
+        <div class="poc-s"><div class="poc-sl">Produksi</div><div class="poc-sv">${isEmpty?'–':nf(x.prod)}</div></div>
+        <div class="poc-s"><div class="poc-sl">Reject</div><div class="poc-sv">${isEmpty?'–':x.rej}</div></div>
+        <div class="poc-s"><div class="poc-sl">Rate</div><div class="poc-sv" style="color:${rc(x.rate)}">${isEmpty?'–':fmtR(x.rate)}</div></div>
+      </div>
+      <div class="poc-info">${isEmpty?'Terdaftar, belum ada data':`${blbadge(x.bl)} Mat:${x.mat} · Proses:${x.pro}`}</div>
     </div>`;
   }).join('');
-  if(PO_LIST.length>0) {
-    curWeek = PO_LIST[0].po;
-    const firstTab = tabs.querySelector('.wtab');
-    if(firstTab){ firstTab.classList.add('w1'); setW(PO_LIST[0].po, firstTab); }
-  }
+
+  if(PL.filter(p=>p.prod>0).length>0) showPODetail(PL.find(p=>p.prod>0).po);
 }
+function showPODetail(po){
+  activePO=po;
+  const orders=D.filter(o=>o.po===po);
+  const s=gs(o=>o.po===po);
+  const poData=getPOs().find(p=>p.po===po);
 
-function setW(po, btn) {
-  curWeek = po;
-  document.querySelectorAll('.wtab').forEach(b=>{b.className='wtab'});
-  btn.classList.add('w1');
-
-  const orders = ORDERS.filter(o=>o.po===po);
-  const d = getStats(o=>o.po===po);
-  const PO_LIST = getPOList();
-  const idx = PO_LIST.findIndex(p=>p.po===po);
-  const prev = idx>0 ? PO_LIST[idx-1] : null;
-
-  document.getElementById('wm-p').textContent = nf(d.prod);
-  document.getElementById('wm-l').textContent = po.replace('PO - ','PO-');
-  document.getElementById('wm-r').textContent = nf(d.rej);
-  document.getElementById('wm-rs').textContent = `Mat:${d.mat} · Proses:${d.pro}`;
-  document.getElementById('wm-rate').textContent = fmtRate(d.rate);
-  document.getElementById('wm-rate').style.color = rc(d.rate);
-  if(prev && prev.rate>0){
-    const diff = d.rate - prev.rate;
-    document.getElementById('wm-d').textContent = (diff<0?'▼ ':'▲ ')+fmtRate(Math.abs(diff));
-    document.getElementById('wm-d').style.color = diff<0?'#16a34a':'#dc2626';
-    document.getElementById('wm-dl').textContent = (diff<0?'membaik':'memburuk')+' vs '+prev.po.replace('PO - ','PO-');
-  } else {
-    document.getElementById('wm-d').textContent = '—';
-    document.getElementById('wm-d').style.color = '#9ca3af';
-    document.getElementById('wm-dl').textContent = 'PO pertama';
-  }
-
-  // Trend chart all POs
-  const allPOs = PO_LIST;
-  const months = getMonths();
-  const pC = allPOs.map(p=>p.po===po?'#dc2626':'#d1d5db');
-  const pS = allPOs.map(p=>p.po===po?9:4);
-  const col = BL_COLORS[(PO_LIST.find(p=>p.po===po)||{bl:'jan'}).bl]||'#2563eb';
-  mk('wm-trend',{type:'line',data:{
-    labels:allPOs.map(p=>p.po.replace('PO - ','PO-')),
-    datasets:[
-      {data:allPOs.map(p=>p.rate),borderColor:col,backgroundColor:col+'14',borderWidth:2.5,tension:.4,fill:true,pointRadius:pS,pointBackgroundColor:pC,pointBorderColor:col,pointBorderWidth:2},
-      {data:allPOs.map(()=>1),borderColor:'#dc2626',borderWidth:1.5,borderDash:[6,4],pointRadius:0,fill:false}
-    ]},options:cOpts()
-  });
-
-  // Vendor bars for this PO
-  const vByVend = orders.reduce((acc,o)=>{
+  const VD=Object.entries(orders.reduce((acc,o)=>{
     if(!acc[o.v])acc[o.v]={prod:0,rej:0};
-    acc[o.v].prod+=o.p; acc[o.v].rej+=o.r; return acc;
-  },{});
-  vbars(Object.entries(vByVend).map(([v,s])=>({v,r:s.prod>0?s.rej/s.prod*100:0})),'wm-vbars');
-  document.getElementById('wm-vl').textContent = po.replace('PO - ','PO-');
+    acc[o.v].prod+=o.p;acc[o.v].rej+=o.r;return acc;
+  },{})).map(([v,d])=>({v,r:d.prod>0?d.rej/d.prod*100:0}));
 
-  // Types
-  mk('wm-type',{type:'bar',data:{
-    labels:TYPE_LABELS,
-    datasets:[{data:[d.ba,d.bo,d.no,d.bs,d.ko,d.ml,d.ol,d.bw,d.db],backgroundColor:TYPE_COLORS,borderWidth:0,borderRadius:5}]},
+  const ta=[s.ba,s.bo,s.no,s.bs,s.ko,s.ml,s.ol,s.bw,s.db];
+  const BLC={jan:'var(--jan)',feb:'var(--feb)',mar:'var(--mar)',apr:'var(--apr)'};
+
+  document.getElementById('po-detail-section').innerHTML=`
+    <div class="card" style="border-top:3px solid ${BLC[poData?.bl||'jan']}">
+      <div class="ch">${po} — Detail Lengkap</div>
+      <div class="cs">${poData?fmtR(poData.rate)+' rate · '+poData.yield_.toFixed(2)+'% yield · '+blbadge(poData?.bl||'jan'):''}</div>
+      <div class="g2" style="margin-top:1rem">
+        <div>
+          <div style="margin-bottom:.75rem;font-size:12px;font-weight:700;color:var(--txt)">Rate Vendor</div>
+          ${VD.sort((a,b)=>b.r-a.r).map(v=>{
+            const mx=Math.max(...VD.map(x=>x.r),.01);
+            return`<div class="brow"><span class="brow-n">${v.v}</span><div class="brow-t"><div class="brow-f" style="width:${Math.round(v.r/mx*100)}%;background:${rc(v.r)}"></div></div><span class="brow-v" style="color:${rc(v.r)}">${fmtR(v.r)}</span></div>`;
+          }).join('')}
+        </div>
+        <div style="position:relative;height:160px"><canvas id="pod-types"></canvas></div>
+      </div>
+      <div class="tscroll" style="margin-top:1rem"><table>
+        <thead><tr><th>Vendor</th><th>Kode Produksi</th><th class="r">Prod</th><th class="r">Rej</th><th class="r">Rate</th><th class="r">Bahan</th><th class="r">Bolong</th><th class="r">BS</th><th class="r" style="color:#1a56db">Noda★</th><th class="r">Mat</th><th class="r">Proses</th></tr></thead>
+        <tbody>${orders.map(o=>{const rt=o.p>0?o.r/o.p*100:0;return`<tr>
+          <td style="font-weight:600">${o.v}</td>
+          <td class="mono" style="font-size:10px;color:var(--txt3)">${o.k}</td>
+          <td class="mono r">${nf(o.p)}</td><td class="mono r">${o.r}</td>
+          <td class="mono r" style="color:${rc(rt)};font-weight:700">${fmtR(rt)}</td>
+          <td class="mono r">${o.ba}</td><td class="mono r">${o.bo}</td><td class="mono r">${o.bs}</td>
+          <td class="mono r" style="color:#1a56db;font-weight:700">${o.no}</td>
+          <td class="mono r" style="color:#1a56db;font-weight:700">${o.mat}</td>
+          <td class="mono r" style="color:#b45309">${o.pro}</td>
+        </tr>`}).join('')}</tbody>
+      </table></div>
+    </div>`;
+
+  mk('pod-types',{type:'bar',data:{labels:TYPE_LABELS,datasets:[{data:ta,backgroundColor:TYPE_COLORS,borderWidth:0,borderRadius:5}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{font:{size:9},color:'#9ca3af'},grid:{display:false},border:{display:false}},
-              y:{ticks:{font:{size:9},color:'#9ca3af'},grid:{color:'rgba(0,0,0,.04)'},border:{display:false}}}}
+      scales:{x:{ticks:{font:{size:8},color:'#94a3b8'},grid:{display:false},border:{display:false}},
+              y:{ticks:{font:{size:8},color:'#94a3b8'},grid:{color:'rgba(0,0,0,.03)'},border:{display:false}}}}
   });
-  document.getElementById('wm-typel').textContent = po.replace('PO - ','PO-')+' · Biru=Mat · Kuning=Proses';
-
-  mk('wm-src',{type:'doughnut',data:{
-    labels:[`Material ${d.rej>0?Math.round(d.mat/d.rej*100):0}%`,`Proses ${d.rej>0?Math.round(d.pro/d.rej*100):0}%`],
-    datasets:[{data:[d.mat||.001,d.pro||.001],backgroundColor:['#2563eb','#d97706'],borderWidth:0,hoverOffset:5}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
-      plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:8,padding:6,color:'#6b7280'}}}}
-  });
-  document.getElementById('wm-srcl').textContent = po.replace('PO - ','PO-');
-  document.getElementById('wm-trl').textContent = po.replace('PO - ','PO-')+' disorot';
-  document.getElementById('wm-detl').textContent = po.replace('PO - ','PO-');
-  document.getElementById('wm-dettitle').textContent = 'Detail Order — '+po.replace('PO - ','PO-');
-
-  document.getElementById('wm-rows').innerHTML = orders.map(o=>{
-    const rt = o.p>0?o.r/o.p*100:0;
-    return`<tr>
-      <td style="font-weight:600">${o.v}</td>
-      <td class="mono" style="font-size:10px;color:var(--txt3)">${o.k}</td>
-      <td class="mono r">${nf(o.p)}</td>
-      <td class="mono r">${o.r}</td>
-      <td class="mono r" style="color:${rc(rt)};font-weight:700">${rt.toFixed(3)}%</td>
-      <td class="mono r">${o.ba}</td><td class="mono r">${o.bo}</td><td class="mono r">${o.bs}</td>
-      <td class="mono r" style="color:#2563eb;font-weight:700">${o.no}</td>
-      <td class="mono r" style="color:#2563eb;font-weight:700">${MAT(o)}</td>
-      <td class="mono r" style="color:#d97706">${PRO(o)}</td>
-      <td>${pill(rt)}</td>
-    </tr>`;
-  }).join('');
 }
 
-// ── VENDOR
-function renderVendor() {
-  const vendors = getVendorList();
-  const months = getMonths();
-
+// ═══════════════════════════════════════
+// VENDOR
+// ═══════════════════════════════════════
+function initVN(){
+  const VL=getVendors();
   mk('vn-grp',{type:'bar',data:{
-    labels:vendors.map(v=>v.v),
-    datasets:months.map(m=>({
-      label:m.charAt(0).toUpperCase()+m.slice(1),
-      data:vendors.map(v=>v.mRates[m]||0),
-      backgroundColor:BL_COLORS[m]||'#888',borderRadius:4
-    }))},
+    labels:VL.map(v=>v.v),
+    datasets:BLS.map(b=>({label:BL_NAME[b],data:VL.map(v=>v.mr[b]||0),backgroundColor:BL_COLOR[b],borderRadius:4}))},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'top',labels:{font:{size:10},boxWidth:8,padding:8,color:'#9ca3af'}}},
-      scales:{x:{ticks:{font:{size:10,family:'DM Sans'},color:'#9ca3af'},grid:{display:false},border:{display:false}},
-              y:{min:0,ticks:{font:{size:9},color:'#9ca3af',callback:v=>v<0.1?v.toFixed(3)+'%':v.toFixed(2)+'%'},grid:{color:'rgba(0,0,0,.04)'},border:{display:false}}}}
+      plugins:{legend:{position:'top',labels:{font:{size:10},boxWidth:8,padding:8,color:'#94a3b8'}}},
+      scales:{x:{ticks:{font:{size:10,family:'Plus Jakarta Sans'},color:'#94a3b8'},grid:{display:false},border:{display:false}},
+              y:{min:0,ticks:{font:{size:9},color:'#94a3b8',callback:v=>fmtR(v)},grid:{color:'rgba(0,0,0,.03)'},border:{display:false}}}}
   });
-  vbars(vendors.map(v=>({v:v.v,r:v.rate})).reverse(),'vn-rank');
+  vbars([...VL].reverse().map(v=>({v:v.v,r:v.rate})),'vn-rank');
 
   mk('vn-prod',{type:'doughnut',data:{
-    labels:vendors.map(v=>v.v+' '+nf(v.prod)),
-    datasets:[{data:vendors.map(v=>v.prod),backgroundColor:PIE_COLORS,borderWidth:0,hoverOffset:7}]},
+    labels:VL.map(v=>v.v+' '+nf(v.prod)),
+    datasets:[{data:VL.map(v=>v.prod),backgroundColor:PIE_C,borderWidth:0,hoverOffset:7}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'50%',
-      plugins:{legend:{position:'right',labels:{font:{size:9},boxWidth:9,padding:7,color:'#6b7280'}}}}
+      plugins:{legend:{position:'right',labels:{font:{size:9},boxWidth:8,padding:6,color:'#64748b'}}}}
   });
   mk('vn-rej',{type:'doughnut',data:{
-    labels:vendors.map(v=>v.v+' '+v.rej),
-    datasets:[{data:vendors.map(v=>v.rej),backgroundColor:PIE_COLORS,borderWidth:0,hoverOffset:7}]},
+    labels:VL.map(v=>v.v+' '+v.rej),
+    datasets:[{data:VL.map(v=>v.rej),backgroundColor:PIE_C,borderWidth:0,hoverOffset:7}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'50%',
-      plugins:{legend:{position:'right',labels:{font:{size:9},boxWidth:9,padding:7,color:'#6b7280'}}}}
+      plugins:{legend:{position:'right',labels:{font:{size:9},boxWidth:8,padding:6,color:'#64748b'}}}}
   });
 
-  document.getElementById('vn-tbl').innerHTML = vendors.map(v=>`<tr>
+  document.getElementById('vn-tbl').innerHTML=VL.map(v=>`<tr>
     <td style="font-weight:700;color:${rc(v.rate)}">${v.v}</td>
-    <td class="mono r">${nf(v.prod)}</td>
-    <td class="mono r">${v.rej}</td>
-    <td class="mono r">${v.mat}</td>
-    <td class="mono r">${v.pro}</td>
-    <td class="mono r" style="color:${rc(v.rate)};font-weight:700">${v.rate.toFixed(3)}%</td>
-    <td>${months.map(m=>v.mRates[m]>0?`<span style="font-size:10px;color:${rc(v.mRates[m])}">${m}:${fmtRate(v.mRates[m])}</span>`:'').join(' ')}</td>
+    <td class="mono r">${nf(v.prod)}</td><td class="mono r">${v.rej}</td>
+    <td class="mono r">${v.mat}</td><td class="mono r">${v.pro}</td>
+    ${BLS.map(b=>`<td class="mono r" style="color:${v.mr[b]>0?rc(v.mr[b]):v.txt3}">${v.mr[b]>0?fmtR(v.mr[b]):'–'}</td>`).join('')}
+    <td class="mono r" style="color:${rc(v.rate)};font-weight:700">${fmtR(v.rate)}</td>
+    <td><span style="font-size:10px">${BLS.map(b=>v.mr[b]>0?`<span style="color:${rc(v.mr[b])}">${BL_NAME[b].slice(0,3)}:${fmtR(v.mr[b])}</span>`:'').join(' ')}</span></td>
     <td>${pill(v.rate)}</td>
   </tr>`).join('');
 }
 
-// ── JENIS CACAT
-function renderCacat() {
-  const all = getStats();
-  const months = getMonths();
-  const totals = [all.ba,all.bo,all.no,all.bs,all.ko,all.ml,all.ol,all.bw,all.db];
-  const tot = totals.reduce((a,b)=>a+b,0);
+// ═══════════════════════════════════════
+// JENIS CACAT
+// ═══════════════════════════════════════
+function initCC(){
+  const all=gs();
+  const totals=[all.ba,all.bo,all.no,all.bs,all.ko,all.ml,all.ol,all.bw,all.db];
+  const tot=totals.reduce((a,b)=>a+b,0);
 
   mk('dc-hbar',{type:'bar',data:{labels:TYPE_LABELS,datasets:[{data:totals,backgroundColor:TYPE_COLORS,borderWidth:0,borderRadius:7}]},
     options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},
-      scales:{x:{ticks:{font:{size:10},color:'#9ca3af'},grid:{color:'rgba(0,0,0,.04)'},border:{display:false}},
-              y:{ticks:{font:{size:11,family:'DM Sans'},color:'#6b7280'},grid:{display:false},border:{display:false}}}}
+      scales:{x:{ticks:{font:{size:10},color:'#94a3b8'},grid:{color:'rgba(0,0,0,.03)'},border:{display:false}},
+              y:{ticks:{font:{size:11,family:'Plus Jakarta Sans'},color:'#475569'},grid:{display:false},border:{display:false}}}}
   });
   mk('dc-donut',{type:'doughnut',data:{
     labels:TYPE_LABELS.map((l,i)=>`${l}: ${totals[i]} (${tot>0?(totals[i]/tot*100).toFixed(1):0}%)`),
-    datasets:[{data:totals,backgroundColor:TYPE_COLORS,borderWidth:0,hoverOffset:9}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'46%',
-      plugins:{legend:{position:'right',labels:{font:{size:9},boxWidth:9,padding:6,color:'#6b7280'}}}}
+    datasets:[{data:totals,backgroundColor:TYPE_COLORS,borderWidth:0,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'45%',
+      plugins:{legend:{position:'right',labels:{font:{size:9},boxWidth:8,padding:6,color:'#64748b'}}}}
   });
   mk('dc-monthly',{type:'bar',data:{
     labels:TYPE_LABELS,
-    datasets:months.map(m=>{
-      const s=getStats(o=>o.bl===m);
-      return{label:m.charAt(0).toUpperCase()+m.slice(1),
-        data:[s.ba,s.bo,s.no,s.bs,s.ko,s.ml,s.ol,s.bw,s.db],
-        backgroundColor:BL_COLORS[m]||'#888',borderRadius:4};
-    })},
+    datasets:BLS.map(b=>{const s=gs(o=>o.bl===b);return{label:BL_NAME[b],data:[s.ba,s.bo,s.no,s.bs,s.ko,s.ml,s.ol,s.bw,s.db],backgroundColor:BL_COLOR[b],borderRadius:4};})},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'top',labels:{font:{size:9},boxWidth:7,padding:7,color:'#9ca3af'}}},
-      scales:{x:{ticks:{font:{size:8},color:'#9ca3af'},grid:{display:false},border:{display:false}},
-              y:{ticks:{font:{size:9},color:'#9ca3af'},grid:{color:'rgba(0,0,0,.04)'},border:{display:false}}}}
+      plugins:{legend:{position:'top',labels:{font:{size:9},boxWidth:7,padding:7,color:'#94a3b8'}}},
+      scales:{x:{ticks:{font:{size:8},color:'#94a3b8'},grid:{display:false},border:{display:false}},
+              y:{ticks:{font:{size:9},color:'#94a3b8'},grid:{color:'rgba(0,0,0,.03)'},border:{display:false}}}}
   });
+
+  // Mat/Pro bars
+  const matItems=[{l:'Bahan',v:all.ba},{l:'Bolong',v:all.bo},{l:'Noda★',v:all.no},{l:'BS',v:all.bs}];
+  const proItems=[{l:'Kotor',v:all.ko},{l:'Melintir',v:all.ml},{l:'Oli',v:all.ol},{l:'Bowing',v:all.bw},{l:'Dbl Bng',v:all.db}];
+  const mxMat=Math.max(...matItems.map(x=>x.v));
+  const mxPro=Math.max(...proItems.map(x=>x.v));
+  document.getElementById('dc-mat-bars').innerHTML=matItems.map(x=>`<div class="brow"><span class="brow-n">${x.l}</span><div class="brow-t"><div class="brow-f" style="width:${Math.round(x.v/mxMat*100)}%;background:#1a56db"></div></div><span class="brow-v" style="color:#1a56db">${x.v}</span></div>`).join('');
+  document.getElementById('dc-pro-bars').innerHTML=proItems.map(x=>`<div class="brow"><span class="brow-n">${x.l}</span><div class="brow-t"><div class="brow-f" style="width:${mxPro>0?Math.round(x.v/mxPro*100):0}%;background:#b45309"></div></div><span class="brow-v" style="color:#b45309">${x.v}</span></div>`).join('');
 }
 
-// ── DETAIL
-function renderDetail() {
-  const vendors = [...new Set(ORDERS.map(o=>o.v))].sort();
-  const months  = getMonths();
-
-  const fbRow = document.getElementById('det-filters');
-  fbRow.innerHTML = `<button class="fb on" onclick="fdet('all',this)">Semua (${ORDERS.length})</button>`
-    + months.map(m=>`<button class="fb" onclick="fdet('${m}',this)">${m.charAt(0).toUpperCase()+m.slice(1)}</button>`).join('')
-    + vendors.map(v=>`<button class="fb" onclick="fdet('${v}',this)">${v}</button>`).join('');
-
-  document.getElementById('det-src').textContent = `${ORDERS.length} order · Noda = Material`;
-  fdet('all', fbRow.querySelector('.fb'));
+// ═══════════════════════════════════════
+// DETAIL ORDER
+// ═══════════════════════════════════════
+function initDT(){
+  const vendors=[...new Set(D.map(o=>o.v))].sort();
+  const fbRow=document.getElementById('det-filters');
+  fbRow.innerHTML=`<button class="fb on" onclick="fdet('all',this)">Semua (${D.length})</button>`
+    +BLS.map(b=>`<button class="fb" onclick="fdet('${b}',this)">${BL_NAME[b]}</button>`).join('')
+    +vendors.map(v=>`<button class="fb" onclick="fdet('${v}',this)">${v}</button>`).join('');
+  fdet('all',fbRow.querySelector('.fb'));
 }
-
-function fdet(f, btn) {
+function fdet(f,btn){
   document.querySelectorAll('#det-filters .fb').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
-  const vendors = [...new Set(ORDERS.map(o=>o.v))];
-  const months  = getMonths();
-  const rows = months.includes(f) ? ORDERS.filter(o=>o.bl===f)
-             : vendors.includes(f) ? ORDERS.filter(o=>o.v===f)
-             : ORDERS;
-  document.getElementById('det-info').textContent = `Menampilkan ${rows.length} dari ${ORDERS.length} order · Noda = Reject Material`;
-  document.getElementById('det-rows').innerHTML = rows.map(o=>{
-    const rt = o.p>0?o.r/o.p*100:0;
+  const rows=BLS.includes(f)?D.filter(o=>o.bl===f):[...new Set(D.map(o=>o.v))].includes(f)?D.filter(o=>o.v===f):D;
+  document.getElementById('det-info').textContent=`Menampilkan ${rows.length} dari ${D.length} order · Noda = Reject Material`;
+  document.getElementById('det-rows').innerHTML=rows.map(o=>{
+    const rt=o.p>0?o.r/o.p*100:0;
     return`<tr>
-      <td style="font-weight:700">${o.po.replace('PO - ','PO-')}</td>
-      <td>${bbul(o.bl)}</td>
+      <td style="font-weight:700">${o.po}</td><td>${blbadge(o.bl)}</td>
       <td style="font-weight:600">${o.v}</td>
       <td class="mono" style="font-size:10px;color:var(--txt3)">${o.k}</td>
-      <td class="mono r">${nf(o.p)}</td>
-      <td class="mono r">${o.r}</td>
-      <td class="mono r" style="color:${rc(rt)};font-weight:700">${rt.toFixed(3)}%</td>
-      <td class="mono r">${o.ba}</td>
-      <td class="mono r">${o.bo}</td>
-      <td class="mono r">${o.bs}</td>
-      <td class="mono r" style="color:#2563eb;font-weight:700">${o.no}</td>
-      <td class="mono r" style="color:#2563eb;font-weight:700">${MAT(o)}</td>
-      <td class="mono r" style="color:#d97706">${PRO(o)}</td>
+      <td class="mono r">${nf(o.p)}</td><td class="mono r">${o.r}</td>
+      <td class="mono r" style="color:${rc(rt)};font-weight:700">${fmtR(rt)}</td>
+      <td class="mono r">${o.ba}</td><td class="mono r">${o.bo}</td><td class="mono r">${o.bs}</td>
+      <td class="mono r" style="color:#1a56db;font-weight:700">${o.no}</td>
+      <td class="mono r" style="color:#1a56db;font-weight:700">${o.mat}</td>
+      <td class="mono r" style="color:#b45309">${o.pro}</td>
       <td>${pill(rt)}</td>
     </tr>`;
   }).join('');
 }
 
-// ════════════════════════════════════════════════════════════════
-//  INIT
-// ════════════════════════════════════════════════════════════════
-// Isi form setup jika ada URL tersimpan
-if (sheetUrl) {
-  document.getElementById('sheet-url-input').value = sheetUrl;
-}
-
+// ── INIT ──
+// Isi URL di setup jika ada tersimpan
+if(sheetUrl)document.getElementById("sheet-url-input").value=sheetUrl;
 // Load data saat halaman dibuka
 loadData();
-
-// Auto-refresh setiap 5 menit
-setInterval(loadData, 5 * 60 * 1000);
 </script>
 </body>
 </html>
